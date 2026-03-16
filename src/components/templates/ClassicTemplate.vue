@@ -157,10 +157,11 @@ defineExpose({
 .photo {
   width: 100px;
   height: 140px;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: contain;
+  object-position: center center;
   border: 2px solid #1e3a8a;
   border-radius: 4px;
+  background-color: #f5f5f5;
 }
 
 .name {

@@ -203,10 +203,11 @@ const emit = defineEmits<{
 .photo {
   width: 100px;
   height: 140px;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: contain;
+  object-position: center center;
   border: 1px solid #ddd;
   border-radius: 4px;
+  background-color: #f5f5f5;
 }
 
 .name {
