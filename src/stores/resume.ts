@@ -88,32 +88,66 @@ export const useResumeStore = defineStore('resume', () => {
     let score = 0
     let total = 0
 
-    // 基本信息
+    // 基本信息（20分）
     total += 20
-    if (resumeData.value.basicInfo.name) score += 5
-    if (resumeData.value.basicInfo.phone) score += 5
-    if (resumeData.value.basicInfo.email) score += 5
-    if (resumeData.value.basicInfo.jobTitle) score += 5
+    if (resumeData.value.basicInfo.name?.trim()) score += 5
+    if (resumeData.value.basicInfo.phone?.trim()) score += 5
+    if (resumeData.value.basicInfo.email?.trim()) score += 5
+    if (resumeData.value.basicInfo.jobTitle?.trim()) score += 5
 
-    // 教育经历
+    // 教育经历（20分）- 检查具体内容
     total += 20
-    if (resumeData.value.education.length > 0) score += 20
+    if (resumeData.value.education.length > 0) {
+      const edu = resumeData.value.education[0]
+      let eduScore = 0
+      if (edu.school?.trim()) eduScore += 5
+      if (edu.major?.trim()) eduScore += 5
+      if (edu.degree?.trim()) eduScore += 5
+      if (edu.startDate?.trim() && edu.endDate?.trim()) eduScore += 5
+      score += eduScore
+    }
 
-    // 工作经历
+    // 工作经历（20分）- 检查具体内容
     total += 20
-    if (resumeData.value.workExperience.length > 0) score += 20
+    if (resumeData.value.workExperience.length > 0) {
+      const work = resumeData.value.workExperience[0]
+      let workScore = 0
+      if (work.company?.trim()) workScore += 5
+      if (work.position?.trim()) workScore += 5
+      if (work.startDate?.trim() && work.endDate?.trim()) workScore += 5
+      // 描述至少50字才算完整
+      if (work.description?.trim().length >= 50) workScore += 5
+      else if (work.description?.trim()) workScore += 2
+      score += workScore
+    }
 
-    // 项目经历
+    // 项目经历（20分）- 检查具体内容
     total += 20
-    if (resumeData.value.projects.length > 0) score += 20
+    if (resumeData.value.projects.length > 0) {
+      const project = resumeData.value.projects[0]
+      let projectScore = 0
+      if (project.name?.trim()) projectScore += 5
+      if (project.role?.trim()) projectScore += 5
+      if (project.startDate?.trim() && project.endDate?.trim()) projectScore += 5
+      // 描述至少50字才算完整
+      if (project.description?.trim().length >= 50) projectScore += 5
+      else if (project.description?.trim()) projectScore += 2
+      score += projectScore
+    }
 
-    // 技能
+    // 技能（10分）- 至少3个技能才算完整
     total += 10
-    if (resumeData.value.skills.length > 0) score += 10
+    const skillCount = resumeData.value.skills.filter(s => s?.trim()).length
+    if (skillCount >= 5) score += 10
+    else if (skillCount >= 3) score += 7
+    else if (skillCount >= 1) score += 3
 
-    // 自我评价
+    // 自我评价（10分）- 至少50字
     total += 10
-    if (resumeData.value.selfEvaluation) score += 10
+    const evalLength = resumeData.value.selfEvaluation?.trim().length || 0
+    if (evalLength >= 100) score += 10
+    else if (evalLength >= 50) score += 7
+    else if (evalLength >= 20) score += 3
 
     return Math.round((score / total) * 100)
   })

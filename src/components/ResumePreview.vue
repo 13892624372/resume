@@ -258,21 +258,39 @@ const handleFieldUpdate = (field: string, value: string) => {
   }
 }
 
-// 计算匹配的技能
+// 计算匹配的技能（改进的匹配算法）
 const matchedSkills = computed(() => {
   if (!resumeStore.jdAnalysis) return []
-  const resumeSkills = resumeStore.resumeData.skills.map(s => s.toLowerCase())
-  return resumeStore.jdAnalysis.hardSkills.filter(skill =>
-    resumeSkills.some(rs => rs.includes(skill.toLowerCase()) || skill.toLowerCase().includes(rs))
-  )
+  const resumeSkills = resumeStore.resumeData.skills.map(s => s.toLowerCase().trim())
+  const resumeText = [
+    ...resumeStore.resumeData.skills,
+    resumeStore.resumeData.basicInfo.jobTitle,
+    ...resumeStore.resumeData.workExperience.map(w => w.position),
+    ...resumeStore.resumeData.workExperience.map(w => w.description),
+    ...resumeStore.resumeData.projects.map(p => p.description),
+    resumeStore.resumeData.selfEvaluation
+  ].join(' ').toLowerCase()
+
+  return resumeStore.jdAnalysis.hardSkills.filter(skill => {
+    const skillLower = skill.toLowerCase().trim()
+    // 1. 直接匹配技能列表
+    const inSkills = resumeSkills.some(rs => 
+      rs === skillLower || 
+      rs.includes(skillLower) || 
+      skillLower.includes(rs)
+    )
+    // 2. 在简历全文中匹配
+    const inText = resumeText.includes(skillLower)
+    return inSkills || inText
+  })
 })
 
 // 计算缺失的技能
 const missingSkills = computed(() => {
   if (!resumeStore.jdAnalysis) return []
-  const resumeSkills = resumeStore.resumeData.skills.map(s => s.toLowerCase())
-  return resumeStore.jdAnalysis.hardSkills.filter(skill =>
-    !resumeSkills.some(rs => rs.includes(skill.toLowerCase()) || skill.toLowerCase().includes(rs))
+  const matched = matchedSkills.value
+  return resumeStore.jdAnalysis.hardSkills.filter(skill => 
+    !matched.includes(skill)
   )
 })
 
