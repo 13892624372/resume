@@ -98,7 +98,7 @@ export const useResumeStore = defineStore('resume', () => {
     // 教育经历（20分）- 检查具体内容
     total += 20
     if (resumeData.value.education.length > 0) {
-      const edu = resumeData.value.education[0]
+      const edu = resumeData.value.education[0]!
       let eduScore = 0
       if (edu.school?.trim()) eduScore += 5
       if (edu.major?.trim()) eduScore += 5
@@ -110,7 +110,7 @@ export const useResumeStore = defineStore('resume', () => {
     // 工作经历（20分）- 检查具体内容
     total += 20
     if (resumeData.value.workExperience.length > 0) {
-      const work = resumeData.value.workExperience[0]
+      const work = resumeData.value.workExperience[0]!
       let workScore = 0
       if (work.company?.trim()) workScore += 5
       if (work.position?.trim()) workScore += 5
@@ -124,7 +124,7 @@ export const useResumeStore = defineStore('resume', () => {
     // 项目经历（20分）- 检查具体内容
     total += 20
     if (resumeData.value.projects.length > 0) {
-      const project = resumeData.value.projects[0]
+      const project = resumeData.value.projects[0]!
       let projectScore = 0
       if (project.name?.trim()) projectScore += 5
       if (project.role?.trim()) projectScore += 5

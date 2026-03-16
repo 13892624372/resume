@@ -253,7 +253,7 @@ const handleFieldUpdate = (field: string, value: string) => {
   if (parts.length === 2) {
     const [section, key] = parts
     if (section === 'basicInfo') {
-      resumeStore.updateBasicInfo({ [key]: value })
+      resumeStore.updateBasicInfo({ [key as keyof typeof resumeStore.resumeData.basicInfo]: value })
     }
   }
 }
