@@ -127,15 +127,9 @@
         <!-- 编辑工具栏 -->
         <div v-if="isEditMode" class="edit-toolbar">
           <el-button-group>
-            <el-button size="small" @click="execCommand('bold')">
-              <el-icon><Bold /></el-icon>
-            </el-button>
-            <el-button size="small" @click="execCommand('italic')">
-              <el-icon><Italic /></el-icon>
-            </el-button>
-            <el-button size="small" @click="execCommand('underline')">
-              <el-icon><Underline /></el-icon>
-            </el-button>
+            <el-button size="small" @click="execCommand('bold')">B</el-button>
+            <el-button size="small" @click="execCommand('italic')">I</el-button>
+            <el-button size="small" @click="execCommand('underline')">U</el-button>
           </el-button-group>
           <el-divider direction="vertical" />
           <el-button-group>
@@ -194,7 +188,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Download, View, Edit, Bold, Italic, Underline } from '@element-plus/icons-vue'
+import { Download, View, Edit, Document, Rank, Bottom } from '@element-plus/icons-vue'
 import { useResumeStore } from '@/stores/resume'
 import ModernTemplate from './templates/ModernTemplate.vue'
 import ClassicTemplate from './templates/ClassicTemplate.vue'
