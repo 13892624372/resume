@@ -100,7 +100,7 @@
       class="preview-dialog"
     >
       <div class="preview-container">
-        <!-- 模板选择 -->
+        <!-- 模板选择和编辑工具栏 -->
         <div class="template-selector-dialog">
           <span class="label">选择模板：</span>
           <el-radio-group v-model="selectedTemplate">
@@ -109,36 +109,81 @@
             <el-radio-button label="creative">创意现代</el-radio-button>
             <el-radio-button label="minimal">简约清新</el-radio-button>
           </el-radio-group>
-          <el-button type="primary" size="small" @click="exportPDF" class="export-btn">
-            <el-icon><Download /></el-icon>导出PDF
-          </el-button>
+          <div class="dialog-actions">
+            <el-button 
+              :type="isEditMode ? 'success' : 'warning'" 
+              size="small" 
+              @click="toggleEditMode"
+            >
+              <el-icon><Edit /></el-icon>
+              {{ isEditMode ? '完成编辑' : '编辑简历' }}
+            </el-button>
+            <el-button type="primary" size="small" @click="exportPDF" class="export-btn">
+              <el-icon><Download /></el-icon>导出PDF
+            </el-button>
+          </div>
+        </div>
+
+        <!-- 编辑工具栏 -->
+        <div v-if="isEditMode" class="edit-toolbar">
+          <el-button-group>
+            <el-button size="small" @click="execCommand('bold')">
+              <el-icon><Bold /></el-icon>
+            </el-button>
+            <el-button size="small" @click="execCommand('italic')">
+              <el-icon><Italic /></el-icon>
+            </el-button>
+            <el-button size="small" @click="execCommand('underline')">
+              <el-icon><Underline /></el-icon>
+            </el-button>
+          </el-button-group>
+          <el-divider direction="vertical" />
+          <el-button-group>
+            <el-button size="small" @click="execCommand('justifyLeft')">左对齐</el-button>
+            <el-button size="small" @click="execCommand('justifyCenter')">居中</el-button>
+            <el-button size="small" @click="execCommand('justifyRight')">右对齐</el-button>
+          </el-button-group>
+          <el-divider direction="vertical" />
+          <el-button size="small" type="danger" @click="resetContent">重置内容</el-button>
         </div>
 
         <!-- 简历内容 -->
-        <div class="resume-container-wrapper-dialog">
+        <div 
+          class="resume-container-wrapper-dialog" 
+          :class="{ 'edit-mode': isEditMode }"
+          @click="handleResumeClick"
+        >
           <ModernTemplate
             v-if="selectedTemplate === 'modern'"
             :key="templateKey"
             ref="templateRef"
             :resume-data="resumeStore.resumeData"
+            :edit-mode="isEditMode"
+            @update:field="handleFieldUpdate"
           />
           <ClassicTemplate
             v-if="selectedTemplate === 'classic'"
             :key="templateKey"
             ref="templateRef"
             :resume-data="resumeStore.resumeData"
+            :edit-mode="isEditMode"
+            @update:field="handleFieldUpdate"
           />
           <CreativeTemplate
             v-if="selectedTemplate === 'creative'"
             :key="templateKey"
             ref="templateRef"
             :resume-data="resumeStore.resumeData"
+            :edit-mode="isEditMode"
+            @update:field="handleFieldUpdate"
           />
           <MinimalTemplate
             v-if="selectedTemplate === 'minimal'"
             :key="templateKey"
             ref="templateRef"
             :resume-data="resumeStore.resumeData"
+            :edit-mode="isEditMode"
+            @update:field="handleFieldUpdate"
           />
         </div>
       </div>
@@ -149,7 +194,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Download, View } from '@element-plus/icons-vue'
+import { Download, View, Edit, Bold, Italic, Underline } from '@element-plus/icons-vue'
 import { useResumeStore } from '@/stores/resume'
 import ModernTemplate from './templates/ModernTemplate.vue'
 import ClassicTemplate from './templates/ClassicTemplate.vue'
@@ -164,6 +209,7 @@ const selectedTemplate = ref('modern')
 const templateRef = ref<InstanceType<typeof ModernTemplate | typeof ClassicTemplate | typeof CreativeTemplate | typeof MinimalTemplate>>()
 const previewDialogVisible = ref(false)
 const templateKey = ref(0) // 用于强制刷新模板组件
+const isEditMode = ref(false) // 编辑模式状态
 
 // 匹配度分数
 const matchScore = ref(0)
@@ -173,6 +219,49 @@ const showPreviewDialog = () => {
   previewDialogVisible.value = true
   // 强制刷新模板组件以加载最新照片
   templateKey.value++
+  // 重置编辑模式
+  isEditMode.value = false
+}
+
+// 切换编辑模式
+const toggleEditMode = () => {
+  isEditMode.value = !isEditMode.value
+  if (!isEditMode.value) {
+    ElMessage.success('编辑完成，可以导出PDF了')
+  }
+}
+
+// 执行编辑命令
+const execCommand = (command: string, value: string = '') => {
+  document.execCommand(command, false, value)
+}
+
+// 重置内容
+const resetContent = () => {
+  templateKey.value++
+  ElMessage.success('内容已重置')
+}
+
+// 处理简历点击事件
+const handleResumeClick = (e: MouseEvent) => {
+  if (!isEditMode.value) return
+  
+  const target = e.target as HTMLElement
+  if (target && target.isContentEditable) {
+    // 确保元素可以编辑
+    target.focus()
+  }
+}
+
+// 处理字段更新
+const handleFieldUpdate = (field: string, value: string) => {
+  const parts = field.split('.')
+  if (parts.length === 2) {
+    const [section, key] = parts
+    if (section === 'basicInfo') {
+      resumeStore.updateBasicInfo({ [key]: value })
+    }
+  }
 }
 
 // 计算匹配的技能
@@ -432,6 +521,25 @@ const exportPDF = async () => {
   background: #e8e8e8;
   display: flex;
   justify-content: center;
+}
+
+.resume-container-wrapper-dialog.edit-mode {
+  background: #e6f2ff;
+}
+
+/* 编辑工具栏样式 */
+.edit-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 10px;
 }
 
 /* 移动端适配 */

@@ -4,15 +4,15 @@
     <div class="header">
       <div class="header-content">
         <div class="header-left">
-          <h1 class="name">{{ resumeData.basicInfo.name || '姓名' }}</h1>
+          <h1 class="name" :contenteditable="editMode" @blur="updateField('basicInfo.name', $event)">{{ resumeData.basicInfo.name || '姓名' }}</h1>
           <div class="contact-info">
-            <span v-if="resumeData.basicInfo.phone">📱 {{ resumeData.basicInfo.phone }}</span>
-            <span v-if="resumeData.basicInfo.email">📧 {{ resumeData.basicInfo.email }}</span>
-            <span v-if="resumeData.basicInfo.location">📍 {{ resumeData.basicInfo.location }}</span>
-            <span v-if="resumeData.basicInfo.age">年龄：{{ resumeData.basicInfo.age }}岁</span>
+            <span v-if="resumeData.basicInfo.phone || editMode" :contenteditable="editMode" @blur="updateField('basicInfo.phone', $event)">📱 {{ resumeData.basicInfo.phone || '电话' }}</span>
+            <span v-if="resumeData.basicInfo.email || editMode" :contenteditable="editMode" @blur="updateField('basicInfo.email', $event)">📧 {{ resumeData.basicInfo.email || '邮箱' }}</span>
+            <span v-if="resumeData.basicInfo.location || editMode" :contenteditable="editMode" @blur="updateField('basicInfo.location', $event)">📍 {{ resumeData.basicInfo.location || '地址' }}</span>
+            <span v-if="resumeData.basicInfo.age || editMode" :contenteditable="editMode" @blur="updateField('basicInfo.age', $event)">年龄：{{ resumeData.basicInfo.age || '23' }}岁</span>
           </div>
-          <div v-if="resumeData.basicInfo.jobTitle" class="job-title">
-            求职意向：{{ resumeData.basicInfo.jobTitle }}
+          <div v-if="resumeData.basicInfo.jobTitle || editMode" class="job-title" :contenteditable="editMode" @blur="updateField('basicInfo.jobTitle', $event)">
+            求职意向：{{ resumeData.basicInfo.jobTitle || '目标职位' }}
           </div>
         </div>
         <div v-if="photoUrl" class="header-right">
@@ -87,15 +87,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onActivated } from 'vue'
+import { ref, onMounted, onActivated, watch } from 'vue'
 import type { ResumeData } from '@/stores/resume'
 
-defineProps<{
+const props = defineProps<{
   resumeData: ResumeData
+  editMode?: boolean
 }>()
 
 const resumeRef = ref<HTMLElement>()
 const photoUrl = ref('')
+const isEditMode = ref(props.editMode || false)
+
+// 监听编辑模式变化
+watch(() => props.editMode, (newVal) => {
+  isEditMode.value = newVal || false
+  if (resumeRef.value) {
+    if (isEditMode.value) {
+      resumeRef.value.classList.add('editable')
+    } else {
+      resumeRef.value.classList.remove('editable')
+    }
+  }
+})
 
 // 加载照片
 const loadPhoto = () => {
@@ -130,6 +144,28 @@ setInterval(() => {
 defineExpose({
   resumeRef
 })
+
+// 更新字段方法
+const updateField = (field: string, event: Event) => {
+  const target = event.target as HTMLElement
+  let value = target.innerText
+  
+  // 移除 emoji 前缀
+  if (value.startsWith('📱 ')) value = value.substring(2)
+  if (value.startsWith('📧 ')) value = value.substring(2)
+  if (value.startsWith('📍 ')) value = value.substring(2)
+  if (value.startsWith('年龄：')) value = value.substring(3)
+  if (value.endsWith('岁')) value = value.substring(0, value.length - 1)
+  if (value.startsWith('求职意向：')) value = value.substring(5)
+  if (value.startsWith('技术栈：')) value = value.substring(4)
+  
+  // 触发更新事件
+  emit('update:field', field, value.trim())
+}
+
+const emit = defineEmits<{
+  'update:field': [field: string, value: string]
+}>()
 </script>
 
 <style scoped>
@@ -284,9 +320,69 @@ defineExpose({
   margin-bottom: 15px;
 }
 
+/* 编辑模式样式 */
+.editable .name,
+.editable .contact-info span,
+.editable .job-title,
+.editable .school,
+.editable .major,
+.editable .date,
+.editable .company,
+.editable .position,
+.editable .project-name,
+.editable .role,
+.editable .tech-stack,
+.editable .description,
+.editable .skill-tag,
+.editable .self-evaluation {
+  cursor: text;
+  min-height: 1.2em;
+}
+
+.editable .name:hover,
+.editable .contact-info span:hover,
+.editable .job-title:hover,
+.editable .school:hover,
+.editable .major:hover,
+.editable .date:hover,
+.editable .company:hover,
+.editable .position:hover,
+.editable .project-name:hover,
+.editable .role:hover,
+.editable .tech-stack:hover,
+.editable .description:hover,
+.editable .skill-tag:hover,
+.editable .self-evaluation:hover {
+  background-color: rgba(64, 158, 255, 0.1);
+  outline: 1px dashed #409eff;
+}
+
+.editable [contenteditable="true"]:focus {
+  background-color: rgba(64, 158, 255, 0.15);
+  outline: 2px solid #409eff;
+}
+
 @media print {
   .modern-resume {
     box-shadow: none;
+  }
+  
+  .editable .name:hover,
+  .editable .contact-info span:hover,
+  .editable .job-title:hover,
+  .editable .school:hover,
+  .editable .major:hover,
+  .editable .date:hover,
+  .editable .company:hover,
+  .editable .position:hover,
+  .editable .project-name:hover,
+  .editable .role:hover,
+  .editable .tech-stack:hover,
+  .editable .description:hover,
+  .editable .skill-tag:hover,
+  .editable .self-evaluation:hover {
+    background-color: transparent;
+    outline: none;
   }
 }
 </style>
