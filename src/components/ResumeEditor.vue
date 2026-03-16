@@ -581,4 +581,47 @@ const generateSelfEvaluation = async () => {
   color: #909399;
   margin-top: 4px;
 }
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .resume-editor {
+    padding: 10px;
+  }
+
+  .experience-item {
+    margin-bottom: 10px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card-header .el-button {
+    width: 100%;
+  }
+
+  .photo-uploader {
+    width: 100px;
+    height: 140px;
+  }
+
+  .photo-preview img {
+    width: 80px;
+    height: 112px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .resume-editor :deep(.el-form-item__label) {
+    float: none;
+    display: block;
+    text-align: left;
+    margin-bottom: 5px;
+  }
+
+  .resume-editor :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+  }
+}
 </style>

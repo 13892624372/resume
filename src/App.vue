@@ -15,9 +15,17 @@
     </el-header>
 
     <el-main class="app-main">
-      <el-row :gutter="20">
+      <!-- 移动端视图切换 -->
+      <div class="mobile-tabs" v-if="isMobile">
+        <el-radio-group v-model="activeView" size="large">
+          <el-radio-button label="edit">编辑简历</el-radio-button>
+          <el-radio-button label="preview">预览简历</el-radio-button>
+        </el-radio-group>
+      </div>
+
+      <el-row :gutter="20" class="main-row">
         <!-- 左侧：JD解析和编辑器 -->
-        <el-col :span="12">
+        <el-col :xs="24" :sm="24" :md="12" :lg="12" v-show="!isMobile || activeView === 'edit'">
           <div class="left-panel">
             <JDParser />
             <ResumeEditor />
@@ -25,7 +33,7 @@
         </el-col>
 
         <!-- 右侧：简历预览 -->
-        <el-col :span="12">
+        <el-col :xs="24" :sm="24" :md="12" :lg="12" v-show="!isMobile || activeView === 'preview'">
           <div class="right-panel">
             <ResumePreview />
           </div>
@@ -62,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, QuestionFilled } from '@element-plus/icons-vue'
 import { useResumeStore } from '@/stores/resume'
@@ -72,6 +80,23 @@ import ResumePreview from '@/components/ResumePreview.vue'
 
 const resumeStore = useResumeStore()
 const helpDialogVisible = ref(false)
+
+// 移动端检测
+const isMobile = ref(false)
+const activeView = ref('edit') // 'edit' 或 'preview'
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 
 const showHelp = () => {
   helpDialogVisible.value = true
@@ -172,5 +197,67 @@ const clearAll = () => {
   padding: 10px;
   border-radius: 4px;
   font-family: monospace;
+}
+
+/* 移动端样式 */
+.mobile-tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media screen and (max-width: 768px) {
+  .app-header {
+    height: auto;
+    line-height: normal;
+    padding: 10px 0;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 15px;
+  }
+
+  .app-title {
+    font-size: 18px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .app-main {
+    padding: 10px;
+  }
+
+  .main-row {
+    margin: 0 !important;
+  }
+
+  .left-panel,
+  .right-panel {
+    margin-bottom: 15px;
+  }
+
+  .right-panel {
+    position: static;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .app-title {
+    font-size: 16px;
+  }
+
+  .header-actions .el-button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
 }
 </style>

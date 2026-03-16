@@ -433,4 +433,76 @@ const exportPDF = async () => {
   display: flex;
   justify-content: center;
 }
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .resume-preview {
+    padding: 10px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .actions .el-button {
+    flex: 1;
+  }
+
+  .match-analysis {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .match-score {
+    justify-content: center;
+  }
+
+  .completion-rate {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .template-selector-dialog {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .template-selector-dialog .export-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .resume-container-wrapper-dialog {
+    padding: 10px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .title {
+    font-size: 14px;
+  }
+
+  .score-circle {
+    width: 60px;
+    height: 60px;
+  }
+
+  .score-number {
+    font-size: 20px;
+  }
+
+  .match-tags {
+    gap: 3px;
+  }
+
+  .match-tags .el-tag {
+    font-size: 11px;
+  }
+}
 </style>
