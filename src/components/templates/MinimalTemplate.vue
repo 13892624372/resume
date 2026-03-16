@@ -1,15 +1,14 @@
 <template>
   <div ref="resumeRef" class="minimal-resume">
-    <!-- 头部 -->
     <div class="header">
       <div class="header-content-wrapper">
         <div class="header-text">
           <h1 class="name">{{ resumeData.basicInfo.name || '姓名' }}</h1>
           <div class="contact-info">
-            <span v-if="resumeData.basicInfo.phone" class="contact-dot">{{ resumeData.basicInfo.phone }}</span>
-            <span v-if="resumeData.basicInfo.email" class="contact-dot">{{ resumeData.basicInfo.email }}</span>
-            <span v-if="resumeData.basicInfo.location" class="contact-dot">{{ resumeData.basicInfo.location }}</span>
-            <span v-if="resumeData.basicInfo.age" class="contact-dot">{{ resumeData.basicInfo.age }}岁</span>
+            <span v-if="resumeData.basicInfo.phone">{{ resumeData.basicInfo.phone }}</span>
+            <span v-if="resumeData.basicInfo.email">{{ resumeData.basicInfo.email }}</span>
+            <span v-if="resumeData.basicInfo.location">{{ resumeData.basicInfo.location }}</span>
+            <span v-if="resumeData.basicInfo.age">{{ resumeData.basicInfo.age }}岁</span>
           </div>
           <div v-if="resumeData.basicInfo.jobTitle" class="job-title">
             {{ resumeData.basicInfo.jobTitle }}
@@ -22,21 +21,17 @@
       </div>
     </div>
 
-    <!-- 主体内容 -->
     <div class="body">
-      <!-- 左侧 -->
       <div class="left-column">
-        <!-- 教育背景 -->
         <div v-if="resumeData.education.length > 0" class="section">
           <h2 class="section-title">教育背景</h2>
           <div v-for="edu in resumeData.education" :key="edu.id" class="item">
             <div class="item-title">{{ edu.school }}</div>
             <div class="item-subtitle">{{ edu.major }} <span v-if="edu.degree">· {{ edu.degree }}</span></div>
-            <div class="item-time">{{ edu.startTime }} - {{ edu.endTime }}</div>
+            <div class="item-time">{{ edu.startDate }} - {{ edu.endDate }}</div>
           </div>
         </div>
 
-        <!-- 技能特长 -->
         <div v-if="resumeData.skills.length > 0" class="section">
           <h2 class="section-title">技能特长</h2>
           <div class="skills-list">
@@ -44,35 +39,31 @@
           </div>
         </div>
 
-        <!-- 自我评价 -->
         <div v-if="resumeData.selfEvaluation" class="section">
           <h2 class="section-title">自我评价</h2>
           <p class="evaluation-text">{{ resumeData.selfEvaluation }}</p>
         </div>
       </div>
 
-      <!-- 右侧 -->
       <div class="right-column">
-        <!-- 工作经历 -->
         <div v-if="resumeData.workExperience.length > 0" class="section">
           <h2 class="section-title">工作经历</h2>
           <div v-for="work in resumeData.workExperience" :key="work.id" class="item">
             <div class="item-header-row">
               <span class="item-title">{{ work.company }}</span>
-              <span class="item-time">{{ work.startTime }} - {{ work.endTime }}</span>
+              <span class="item-time">{{ work.startDate }} - {{ work.endDate }}</span>
             </div>
             <div class="item-subtitle">{{ work.position }}</div>
             <div class="item-desc">{{ work.description }}</div>
           </div>
         </div>
 
-        <!-- 项目经历 -->
         <div v-if="resumeData.projects.length > 0" class="section">
           <h2 class="section-title">项目经历</h2>
           <div v-for="project in resumeData.projects" :key="project.id" class="item">
             <div class="item-header-row">
               <span class="item-title">{{ project.name }}</span>
-              <span class="item-time">{{ project.startTime }} - {{ project.endTime }}</span>
+              <span class="item-time">{{ project.startDate }} - {{ project.endDate }}</span>
             </div>
             <div class="item-subtitle">{{ project.role }}</div>
             <div class="item-desc">{{ project.description }}</div>
@@ -94,7 +85,6 @@ defineProps<{
 const resumeRef = ref<HTMLElement>()
 const photoUrl = ref('')
 
-// 加载照片
 const loadPhoto = () => {
   const savedPhoto = localStorage.getItem('resume_photo')
   if (savedPhoto) {
@@ -108,7 +98,6 @@ onMounted(() => {
   loadPhoto()
 })
 
-// 每秒检查一次照片更新
 setInterval(() => {
   const savedPhoto = localStorage.getItem('resume_photo')
   if (savedPhoto && savedPhoto !== photoUrl.value) {
@@ -176,12 +165,12 @@ defineExpose({
   margin-bottom: 10px;
 }
 
-.contact-dot {
+.contact-info span {
   font-size: 10pt;
   opacity: 0.95;
 }
 
-.contact-dot:not(:last-child)::after {
+.contact-info span:not(:last-child)::after {
   content: " · ";
   margin-left: 8px;
 }

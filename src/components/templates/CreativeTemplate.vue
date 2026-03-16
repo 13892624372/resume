@@ -1,6 +1,5 @@
 <template>
   <div ref="resumeRef" class="creative-resume">
-    <!-- 左侧栏 -->
     <div class="left-sidebar">
       <div class="profile-section">
         <div v-if="photoUrl" class="photo-container">
@@ -12,30 +11,24 @@
         </div>
       </div>
 
-      <!-- 联系信息 -->
       <div class="sidebar-section">
         <h3 class="sidebar-title">联系方式</h3>
         <div class="contact-list">
           <div v-if="resumeData.basicInfo.phone" class="contact-item">
-            <span class="contact-icon">&#128241;</span>
             <span>{{ resumeData.basicInfo.phone }}</span>
           </div>
           <div v-if="resumeData.basicInfo.email" class="contact-item">
-            <span class="contact-icon">&#9993;</span>
             <span>{{ resumeData.basicInfo.email }}</span>
           </div>
           <div v-if="resumeData.basicInfo.location" class="contact-item">
-            <span class="contact-icon">&#128205;</span>
             <span>{{ resumeData.basicInfo.location }}</span>
           </div>
           <div v-if="resumeData.basicInfo.age" class="contact-item">
-            <span class="contact-icon">&#128100;</span>
             <span>{{ resumeData.basicInfo.age }}岁</span>
           </div>
         </div>
       </div>
 
-      <!-- 技能 -->
       <div v-if="resumeData.skills.length > 0" class="sidebar-section">
         <h3 class="sidebar-title">技能特长</h3>
         <div class="skills-container">
@@ -48,43 +41,35 @@
         </div>
       </div>
 
-      <!-- 期望城市 -->
       <div v-if="resumeData.basicInfo.targetCity" class="sidebar-section">
         <h3 class="sidebar-title">期望城市</h3>
         <div class="target-city">{{ resumeData.basicInfo.targetCity }}</div>
       </div>
     </div>
 
-    <!-- 右侧内容区 -->
     <div class="main-content">
-      <!-- 教育背景 -->
       <div v-if="resumeData.education.length > 0" class="content-section">
-        <h2 class="content-title">
-          <span class="title-deco"></span>教育背景
-        </h2>
+        <h2 class="content-title">教育背景</h2>
         <div v-for="edu in resumeData.education" :key="edu.id" class="timeline-item">
           <div class="timeline-dot"></div>
           <div class="timeline-content">
             <div class="item-header">
               <span class="school">{{ edu.school }}</span>
-              <span class="time">{{ edu.startTime }} - {{ edu.endTime }}</span>
+              <span class="time">{{ edu.startDate }} - {{ edu.endDate }}</span>
             </div>
             <div class="major">{{ edu.major }} <span v-if="edu.degree">| {{ edu.degree }}</span></div>
           </div>
         </div>
       </div>
 
-      <!-- 工作经历 -->
       <div v-if="resumeData.workExperience.length > 0" class="content-section">
-        <h2 class="content-title">
-          <span class="title-deco"></span>工作经历
-        </h2>
+        <h2 class="content-title">工作经历</h2>
         <div v-for="work in resumeData.workExperience" :key="work.id" class="timeline-item">
           <div class="timeline-dot"></div>
           <div class="timeline-content">
             <div class="item-header">
               <span class="company">{{ work.company }}</span>
-              <span class="time">{{ work.startTime }} - {{ work.endTime }}</span>
+              <span class="time">{{ work.startDate }} - {{ work.endDate }}</span>
             </div>
             <div class="position">{{ work.position }}</div>
             <div class="description">{{ work.description }}</div>
@@ -92,17 +77,14 @@
         </div>
       </div>
 
-      <!-- 项目经历 -->
       <div v-if="resumeData.projects.length > 0" class="content-section">
-        <h2 class="content-title">
-          <span class="title-deco"></span>项目经历
-        </h2>
+        <h2 class="content-title">项目经历</h2>
         <div v-for="project in resumeData.projects" :key="project.id" class="timeline-item">
           <div class="timeline-dot"></div>
           <div class="timeline-content">
             <div class="item-header">
               <span class="project-name">{{ project.name }}</span>
-              <span class="time">{{ project.startTime }} - {{ project.endTime }}</span>
+              <span class="time">{{ project.startDate }} - {{ project.endDate }}</span>
             </div>
             <div class="role">{{ project.role }}</div>
             <div class="description">{{ project.description }}</div>
@@ -110,11 +92,8 @@
         </div>
       </div>
 
-      <!-- 自我评价 -->
       <div v-if="resumeData.selfEvaluation" class="content-section">
-        <h2 class="content-title">
-          <span class="title-deco"></span>自我评价
-        </h2>
+        <h2 class="content-title">自我评价</h2>
         <p class="self-evaluation">{{ resumeData.selfEvaluation }}</p>
       </div>
     </div>
@@ -132,7 +111,6 @@ defineProps<{
 const resumeRef = ref<HTMLElement>()
 const photoUrl = ref('')
 
-// 加载照片
 const loadPhoto = () => {
   const savedPhoto = localStorage.getItem('resume_photo')
   if (savedPhoto) {
@@ -146,7 +124,6 @@ onMounted(() => {
   loadPhoto()
 })
 
-// 每秒检查一次照片更新
 setInterval(() => {
   const savedPhoto = localStorage.getItem('resume_photo')
   if (savedPhoto && savedPhoto !== photoUrl.value) {
@@ -228,14 +205,7 @@ defineExpose({
 }
 
 .contact-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-size: 9.5pt;
-}
-
-.contact-icon {
-  font-size: 12pt;
 }
 
 .skills-container {
@@ -264,7 +234,6 @@ defineExpose({
   height: 100%;
   background: white;
   border-radius: 3px;
-  transition: width 0.3s;
 }
 
 .target-city {
@@ -288,23 +257,14 @@ defineExpose({
   font-size: 14pt;
   color: #6366f1;
   margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.title-deco {
-  width: 4px;
-  height: 20px;
-  background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
-  border-radius: 2px;
+  padding-left: 10px;
+  border-left: 4px solid #6366f1;
 }
 
 .timeline-item {
   display: flex;
   gap: 12px;
   margin-bottom: 18px;
-  position: relative;
 }
 
 .timeline-dot {

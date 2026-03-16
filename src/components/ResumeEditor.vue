@@ -390,6 +390,8 @@ const addProject = () => {
     id: Date.now().toString(),
     name: '',
     role: '',
+    startDate: '',
+    endDate: '',
     description: '',
     techStack: ''
   }

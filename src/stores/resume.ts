@@ -34,6 +34,8 @@ export interface Project {
   id: string
   name: string
   role: string
+  startDate: string
+  endDate: string
   description: string
   techStack: string
 }

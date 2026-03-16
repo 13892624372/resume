@@ -373,9 +373,10 @@ export const getAllCities = (): string[] => {
 // 根据城市名获取完整地址
 export const getFullAddress = (selectedValues: string[]): string => {
   if (selectedValues.length === 0) return ''
-  if (selectedValues.length === 1) return selectedValues[0]
+  if (selectedValues.length === 1) return selectedValues[0] || ''
   if (selectedValues.length === 2) {
-    const [province, city] = selectedValues
+    const province = selectedValues[0] || ''
+    const city = selectedValues[1] || ''
     // 如果是直辖市，直接返回市+区
     if (['北京市', '上海市', '天津市', '重庆市'].includes(province)) {
       return `${province}${city}`

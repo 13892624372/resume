@@ -30,13 +30,11 @@
 
     <!-- 教育背景 -->
     <div v-if="resumeData.education.length > 0" class="section">
-      <h2 class="section-title">
-        <span class="title-icon">&#127891;</span>教育背景
-      </h2>
+      <h2 class="section-title">教育背景</h2>
       <div v-for="edu in resumeData.education" :key="edu.id" class="education-item">
         <div class="item-header">
           <span class="school">{{ edu.school }}</span>
-          <span class="time">{{ edu.startTime }} - {{ edu.endTime }}</span>
+          <span class="time">{{ edu.startDate }} - {{ edu.endDate }}</span>
         </div>
         <div class="item-detail">
           <span>{{ edu.major }}</span>
@@ -47,13 +45,11 @@
 
     <!-- 工作经历 -->
     <div v-if="resumeData.workExperience.length > 0" class="section">
-      <h2 class="section-title">
-        <span class="title-icon">&#128188;</span>工作经历
-      </h2>
+      <h2 class="section-title">工作经历</h2>
       <div v-for="work in resumeData.workExperience" :key="work.id" class="work-item">
         <div class="item-header">
           <span class="company">{{ work.company }}</span>
-          <span class="time">{{ work.startTime }} - {{ work.endTime }}</span>
+          <span class="time">{{ work.startDate }} - {{ work.endDate }}</span>
         </div>
         <div class="position">{{ work.position }}</div>
         <div class="description">{{ work.description }}</div>
@@ -62,13 +58,11 @@
 
     <!-- 项目经历 -->
     <div v-if="resumeData.projects.length > 0" class="section">
-      <h2 class="section-title">
-        <span class="title-icon">&#128187;</span>项目经历
-      </h2>
+      <h2 class="section-title">项目经历</h2>
       <div v-for="project in resumeData.projects" :key="project.id" class="project-item">
         <div class="item-header">
           <span class="project-name">{{ project.name }}</span>
-          <span class="time">{{ project.startTime }} - {{ project.endTime }}</span>
+          <span class="time">{{ project.startDate }} - {{ project.endDate }}</span>
         </div>
         <div class="role">{{ project.role }}</div>
         <div class="description">{{ project.description }}</div>
@@ -77,9 +71,7 @@
 
     <!-- 技能特长 -->
     <div v-if="resumeData.skills.length > 0" class="section">
-      <h2 class="section-title">
-        <span class="title-icon">&#128295;</span>技能特长
-      </h2>
+      <h2 class="section-title">技能特长</h2>
       <div class="skills-list">
         <span v-for="(skill, index) in resumeData.skills" :key="index" class="skill-tag">
           {{ skill }}
@@ -89,9 +81,7 @@
 
     <!-- 自我评价 -->
     <div v-if="resumeData.selfEvaluation" class="section">
-      <h2 class="section-title">
-        <span class="title-icon">&#128172;</span>自我评价
-      </h2>
+      <h2 class="section-title">自我评价</h2>
       <p class="self-evaluation">{{ resumeData.selfEvaluation }}</p>
     </div>
   </div>
@@ -109,7 +99,6 @@ defineProps<{
 const resumeRef = ref<HTMLElement>()
 const photoUrl = ref('')
 
-// 加载照片
 const loadPhoto = () => {
   const savedPhoto = localStorage.getItem('resume_photo')
   if (savedPhoto) {
@@ -123,7 +112,6 @@ onMounted(() => {
   loadPhoto()
 })
 
-// 每秒检查一次照片更新
 setInterval(() => {
   const savedPhoto = localStorage.getItem('resume_photo')
   if (savedPhoto && savedPhoto !== photoUrl.value) {
@@ -214,13 +202,6 @@ defineExpose({
   border-bottom: 2px solid #e5e7eb;
   padding-bottom: 8px;
   margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.title-icon {
-  font-size: 16pt;
 }
 
 .item-header {
