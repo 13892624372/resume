@@ -268,7 +268,7 @@ import ModernTemplate from './templates/ModernTemplate.vue'
 import MinimalTemplate from './templates/MinimalTemplate.vue'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
-import { aiService } from '@/services/aiService'
+import { aiService, type JDAnalysisResult } from '@/services/aiService'
 import type { ResumeData } from '@/stores/resume'
 
 const resumeStore = useResumeStore()
@@ -460,7 +460,7 @@ const scoreColor = computed(() => {
 })
 
 // 计算本地多维度匹配度（基于实际简历内容）
-const calculateLocalMatchDimensions = (jdAnalysis: JDAnalysis) => {
+const calculateLocalMatchDimensions = (jdAnalysis: JDAnalysisResult) => {
   const resumeData = resumeStore.resumeData
   
   // 1. 技能匹配度（基于实际匹配的技能）
@@ -479,7 +479,7 @@ const calculateLocalMatchDimensions = (jdAnalysis: JDAnalysis) => {
     const projectText = resumeData.projects.map(p => `${p.name} ${p.description} ${p.techStack}`).join(' ').toLowerCase()
     // 如果有JD关键词，检查匹配度；如果没有关键词，只要有项目就给60分
     if (jdAnalysis.keywords && jdAnalysis.keywords.length > 0) {
-      const matchedKeywords = jdAnalysis.keywords.filter(kw => projectText.includes(kw.toLowerCase()))
+      const matchedKeywords = jdAnalysis.keywords.filter((kw: string) => projectText.includes(kw.toLowerCase()))
       projectMatchRate = Math.round((matchedKeywords.length / jdAnalysis.keywords.length) * 100)
     } else {
       projectMatchRate = 60 // 有项目但没有JD关键词，给基础分
@@ -495,7 +495,7 @@ const calculateLocalMatchDimensions = (jdAnalysis: JDAnalysis) => {
     const workText = resumeData.workExperience.map(w => `${w.company} ${w.position} ${w.description}`).join(' ').toLowerCase()
     // 如果有JD关键词，检查匹配度；如果没有关键词，只要有经历就给60分
     if (jdAnalysis.keywords && jdAnalysis.keywords.length > 0) {
-      const matchedKeywords = jdAnalysis.keywords.filter(kw => workText.includes(kw.toLowerCase()))
+      const matchedKeywords = jdAnalysis.keywords.filter((kw: string) => workText.includes(kw.toLowerCase()))
       experienceMatchRate = Math.round((matchedKeywords.length / jdAnalysis.keywords.length) * 100)
     } else {
       experienceMatchRate = 60 // 有经历但没有JD关键词，给基础分

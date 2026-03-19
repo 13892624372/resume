@@ -431,8 +431,8 @@ const parseBirthDate = () => {
   if (birthDate) {
     const parts = birthDate.split('.')
     if (parts.length === 2) {
-      birthYear.value = parseInt(parts[0])
-      birthMonth.value = parseInt(parts[1])
+      birthYear.value = parseInt(parts[0] || '0') || null
+      birthMonth.value = parseInt(parts[1] || '0') || null
     }
   }
 }

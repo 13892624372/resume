@@ -233,12 +233,16 @@ export const useResumeStore = defineStore('resume', () => {
     resumeData.value = {
       basicInfo: {
         name: '',
-        age: '',
+        gender: '',
+        politicalStatus: '',
+        birthDate: '',
+        degree: '',
         phone: '',
         email: '',
         location: '',
         jobTitle: '',
-        targetCity: ''
+        targetCities: [],
+        signature: ''
       },
       education: [],
       workExperience: [],
