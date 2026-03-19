@@ -75,13 +75,26 @@
           <el-descriptions-item label="教育经历">{{ resumeStore.resumeData.education.length }} 段</el-descriptions-item>
           <el-descriptions-item label="工作经历">{{ resumeStore.resumeData.workExperience.length }} 段</el-descriptions-item>
           <el-descriptions-item label="项目经历">{{ resumeStore.resumeData.projects.length }} 段</el-descriptions-item>
-          <el-descriptions-item label="技能标签">{{ resumeStore.resumeData.skills.length }} 个</el-descriptions-item>
+          <el-descriptions-item label="技能标签">
+            <div class="skills-tags-preview">
+              <el-tag
+                v-for="skill in resumeStore.resumeData.skills"
+                :key="skill"
+                type="primary"
+                size="small"
+                class="skill-tag-item"
+              >
+                {{ skill }}
+              </el-tag>
+              <span v-if="resumeStore.resumeData.skills.length === 0" class="no-skills">未填写</span>
+            </div>
+          </el-descriptions-item>
         </el-descriptions>
       </div>
 
       <div class="preview-hint">
         <el-alert
-          title="点击「查看简历」按钮可预览完整简历效果"
+          title="点击「查看简历」按钮可预览完整简历效果，支持Word式编辑"
           type="info"
           :closable="false"
           show-icon
@@ -93,92 +106,106 @@
     <el-dialog
       v-model="previewDialogVisible"
       title="简历预览"
-      width="900px"
-      top="5vh"
+      :width="isFullscreen ? '100%' : '950px'"
+      :top="isFullscreen ? '0' : '3vh'"
+      :fullscreen="isFullscreen"
       :close-on-click-modal="false"
       :append-to-body="true"
       class="preview-dialog"
+      :class="{ 'fullscreen-dialog': isFullscreen }"
+      @close="handleDialogClose"
     >
       <div class="preview-container">
         <!-- 模板选择和编辑工具栏 -->
         <div class="template-selector-dialog">
-          <span class="label">选择模板：</span>
-          <el-radio-group v-model="selectedTemplate">
-            <el-radio-button label="modern">现代简约</el-radio-button>
-            <el-radio-button label="classic">经典商务</el-radio-button>
-            <el-radio-button label="creative">创意现代</el-radio-button>
-            <el-radio-button label="minimal">简约清新</el-radio-button>
-          </el-radio-group>
+          <div class="template-selector">
+            <span class="label">选择模板：</span>
+            <el-radio-group v-model="selectedTemplate" :disabled="isEditMode">
+              <el-radio-button label="creative">创意现代</el-radio-button>
+              <el-radio-button label="modern">现代简约</el-radio-button>
+              <el-radio-button label="minimal">简约清新</el-radio-button>
+            </el-radio-group>
+          </div>
           <div class="dialog-actions">
-            <el-button 
-              :type="isEditMode ? 'success' : 'warning'" 
-              size="small" 
-              @click="toggleEditMode"
-            >
-              <el-icon><Edit /></el-icon>
-              {{ isEditMode ? '完成编辑' : '编辑简历' }}
-            </el-button>
-            <el-button type="primary" size="small" @click="exportPDF" class="export-btn">
+            <!-- 缩放控制 -->
+            <div class="zoom-controls">
+              <el-button size="small" circle @click="decreaseZoom">
+                <el-icon><Minus /></el-icon>
+              </el-button>
+              <span class="zoom-value">{{ Math.round(zoomLevel * 100) }}%</span>
+              <el-button size="small" circle @click="increaseZoom">
+                <el-icon><Plus /></el-icon>
+              </el-button>
+              <el-button size="small" @click="resetZoom">重置</el-button>
+            </div>
+            <el-tooltip :content="isFullscreen ? '退出全屏' : '全屏显示'" placement="top">
+              <el-button 
+                type="info" 
+                size="small" 
+                @click="toggleFullscreen"
+              >
+                <el-icon><FullScreen /></el-icon>
+                {{ isFullscreen ? '退出全屏' : '全屏' }}
+              </el-button>
+            </el-tooltip>
+            <el-tooltip :content="isEditMode ? '点击完成保存修改' : '进入Word式编辑模式'" placement="top">
+              <el-button 
+                :type="isEditMode ? 'success' : 'warning'" 
+                size="small" 
+                @click="toggleEditMode"
+              >
+                <el-icon><Edit /></el-icon>
+                {{ isEditMode ? '完成编辑' : '编辑简历' }}
+              </el-button>
+            </el-tooltip>
+            <el-button type="primary" size="small" @click="exportPDF" class="export-btn" :disabled="isEditMode">
               <el-icon><Download /></el-icon>导出PDF
             </el-button>
           </div>
         </div>
 
-        <!-- 编辑工具栏 -->
-        <div v-if="isEditMode" class="edit-toolbar">
-          <el-button-group>
-            <el-button size="small" @click="execCommand('bold')">B</el-button>
-            <el-button size="small" @click="execCommand('italic')">I</el-button>
-            <el-button size="small" @click="execCommand('underline')">U</el-button>
-          </el-button-group>
-          <el-divider direction="vertical" />
-          <el-button-group>
-            <el-button size="small" @click="execCommand('justifyLeft')">左对齐</el-button>
-            <el-button size="small" @click="execCommand('justifyCenter')">居中</el-button>
-            <el-button size="small" @click="execCommand('justifyRight')">右对齐</el-button>
-          </el-button-group>
-          <el-divider direction="vertical" />
-          <el-button size="small" type="danger" @click="resetContent">重置内容</el-button>
+        <!-- 编辑模式提示 -->
+        <div v-if="isEditMode" class="edit-mode-banner">
+          <el-alert
+            title="📝 Word式编辑模式已开启 - 点击任意文字即可编辑，支持增删条目、拖拽排序"
+            type="warning"
+            :closable="false"
+            show-icon
+          />
         </div>
 
         <!-- 简历内容 -->
         <div 
           class="resume-container-wrapper-dialog" 
-          :class="{ 'edit-mode': isEditMode }"
-          @click="handleResumeClick"
+          :class="{ 'edit-mode': isEditMode, 'fullscreen-wrapper': isFullscreen }"
+          :style="resumeWrapperStyle"
         >
-          <ModernTemplate
-            v-if="selectedTemplate === 'modern'"
-            :key="templateKey"
-            ref="templateRef"
-            :resume-data="resumeStore.resumeData"
-            :edit-mode="isEditMode"
-            @update:field="handleFieldUpdate"
-          />
-          <ClassicTemplate
-            v-if="selectedTemplate === 'classic'"
-            :key="templateKey"
-            ref="templateRef"
-            :resume-data="resumeStore.resumeData"
-            :edit-mode="isEditMode"
-            @update:field="handleFieldUpdate"
-          />
-          <CreativeTemplate
-            v-if="selectedTemplate === 'creative'"
-            :key="templateKey"
-            ref="templateRef"
-            :resume-data="resumeStore.resumeData"
-            :edit-mode="isEditMode"
-            @update:field="handleFieldUpdate"
-          />
-          <MinimalTemplate
-            v-if="selectedTemplate === 'minimal'"
-            :key="templateKey"
-            ref="templateRef"
-            :resume-data="resumeStore.resumeData"
-            :edit-mode="isEditMode"
-            @update:field="handleFieldUpdate"
-          />
+          <div class="resume-scale-wrapper" :style="resumeScaleStyle">
+            <CreativeTemplate
+              v-if="selectedTemplate === 'creative'"
+              :key="templateKey"
+              ref="templateRef"
+              :resume-data="editableResumeData"
+              :edit-mode="isEditMode"
+              @update:data="handleDataUpdate"
+            />
+            <ModernTemplate
+              v-if="selectedTemplate === 'modern'"
+              :key="templateKey"
+              ref="templateRef"
+              :resume-data="editableResumeData"
+              :edit-mode="isEditMode"
+              @update:data="handleDataUpdate"
+            />
+            <MinimalTemplate
+              v-if="selectedTemplate === 'minimal'"
+              :key="templateKey"
+              ref="templateRef"
+              :resume-data="editableResumeData"
+              :edit-mode="isEditMode"
+              @update:data="handleDataUpdate"
+            />
+          </div>
         </div>
       </div>
     </el-dialog>
@@ -187,78 +214,141 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Download, View, Edit, Document, Rank, Bottom } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Download, View, Edit, FullScreen, Plus, Minus } from '@element-plus/icons-vue'
 import { useResumeStore } from '@/stores/resume'
-import ModernTemplate from './templates/ModernTemplate.vue'
-import ClassicTemplate from './templates/ClassicTemplate.vue'
 import CreativeTemplate from './templates/CreativeTemplate.vue'
+import ModernTemplate from './templates/ModernTemplate.vue'
 import MinimalTemplate from './templates/MinimalTemplate.vue'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import { aiService } from '@/services/aiService'
+import type { ResumeData } from '@/stores/resume'
 
 const resumeStore = useResumeStore()
-const selectedTemplate = ref('modern')
-const templateRef = ref<InstanceType<typeof ModernTemplate | typeof ClassicTemplate | typeof CreativeTemplate | typeof MinimalTemplate>>()
+const selectedTemplate = ref('creative')
+const templateRef = ref<InstanceType<typeof CreativeTemplate | typeof ModernTemplate | typeof MinimalTemplate>>()
 const previewDialogVisible = ref(false)
-const templateKey = ref(0) // 用于强制刷新模板组件
-const isEditMode = ref(false) // 编辑模式状态
+const templateKey = ref(0)
+const isEditMode = ref(false)
+const isFullscreen = ref(false)
+const zoomLevel = ref(1)
+
+// 可编辑的简历数据副本
+const editableResumeData = ref<ResumeData>(JSON.parse(JSON.stringify(resumeStore.resumeData)))
 
 // 匹配度分数
 const matchScore = ref(0)
 
+// 简历容器样式
+const resumeWrapperStyle = computed(() => {
+  if (isFullscreen.value) {
+    return {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+      minHeight: 'calc(100vh - 200px)',
+      overflow: 'auto'
+    }
+  }
+  return {}
+})
+
+// 简历缩放样式
+const resumeScaleStyle = computed(() => {
+  return {
+    transform: `scale(${zoomLevel.value})`,
+    transformOrigin: 'top center',
+    transition: 'transform 0.2s ease'
+  }
+})
+
+// 全屏切换
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value
+}
+
+// 缩放控制
+const increaseZoom = () => {
+  if (zoomLevel.value < 1.5) {
+    zoomLevel.value += 0.1
+  }
+}
+
+const decreaseZoom = () => {
+  if (zoomLevel.value > 0.5) {
+    zoomLevel.value -= 0.1
+  }
+}
+
+const resetZoom = () => {
+  zoomLevel.value = 1
+}
+
 // 显示预览对话框
 const showPreviewDialog = () => {
   previewDialogVisible.value = true
-  // 强制刷新模板组件以加载最新照片
+  // 复制当前数据到可编辑副本
+  editableResumeData.value = JSON.parse(JSON.stringify(resumeStore.resumeData))
+  // 强制刷新模板组件
   templateKey.value++
-  // 重置编辑模式
+  // 重置编辑模式、全屏和缩放
+  isEditMode.value = false
+  isFullscreen.value = false
+  zoomLevel.value = 1
+}
+
+// 处理对话框关闭
+const handleDialogClose = () => {
+  if (isEditMode.value) {
+    // 如果还在编辑模式，询问是否保存
+    ElMessageBox.confirm(
+      '您正在编辑模式中，是否保存修改？',
+      '提示',
+      {
+        confirmButtonText: '保存',
+        cancelButtonText: '放弃',
+        type: 'warning'
+      }
+    ).then(() => {
+      saveEditData()
+    }).catch(() => {
+      // 放弃修改
+      editableResumeData.value = JSON.parse(JSON.stringify(resumeStore.resumeData))
+    })
+  }
   isEditMode.value = false
 }
 
 // 切换编辑模式
-const toggleEditMode = () => {
+const toggleEditMode = async () => {
+  if (isEditMode.value) {
+    // 退出编辑模式，保存数据
+    await saveEditData()
+  }
   isEditMode.value = !isEditMode.value
-  if (!isEditMode.value) {
-    ElMessage.success('编辑完成，可以导出PDF了')
+}
+
+// 保存编辑数据
+const saveEditData = async () => {
+  try {
+    // 更新store中的数据
+    resumeStore.resumeData = JSON.parse(JSON.stringify(editableResumeData.value))
+    // 保存到localStorage
+    resumeStore.saveToLocalStorage()
+    ElMessage.success('修改已保存')
+  } catch (error) {
+    console.error('保存失败:', error)
+    ElMessage.error('保存失败')
   }
 }
 
-// 执行编辑命令
-const execCommand = (command: string, value: string = '') => {
-  document.execCommand(command, false, value)
+// 处理数据更新
+const handleDataUpdate = (newData: ResumeData) => {
+  editableResumeData.value = newData
 }
 
-// 重置内容
-const resetContent = () => {
-  templateKey.value++
-  ElMessage.success('内容已重置')
-}
-
-// 处理简历点击事件
-const handleResumeClick = (e: MouseEvent) => {
-  if (!isEditMode.value) return
-  
-  const target = e.target as HTMLElement
-  if (target && target.isContentEditable) {
-    // 确保元素可以编辑
-    target.focus()
-  }
-}
-
-// 处理字段更新
-const handleFieldUpdate = (field: string, value: string) => {
-  const parts = field.split('.')
-  if (parts.length === 2) {
-    const [section, key] = parts
-    if (section === 'basicInfo') {
-      resumeStore.updateBasicInfo({ [key as keyof typeof resumeStore.resumeData.basicInfo]: value })
-    }
-  }
-}
-
-// 计算匹配的技能（改进的匹配算法）
+// 计算匹配的技能
 const matchedSkills = computed(() => {
   if (!resumeStore.jdAnalysis) return []
   const resumeSkills = resumeStore.resumeData.skills.map(s => s.toLowerCase().trim())
@@ -273,13 +363,11 @@ const matchedSkills = computed(() => {
 
   return resumeStore.jdAnalysis.hardSkills.filter(skill => {
     const skillLower = skill.toLowerCase().trim()
-    // 1. 直接匹配技能列表
     const inSkills = resumeSkills.some(rs => 
       rs === skillLower || 
       rs.includes(skillLower) || 
       skillLower.includes(rs)
     )
-    // 2. 在简历全文中匹配
     const inText = resumeText.includes(skillLower)
     return inSkills || inText
   })
@@ -312,7 +400,6 @@ watch(() => resumeStore.jdAnalysis, async (newVal) => {
       matchScore.value = score
       resumeStore.setMatchScore(score)
     } catch (error) {
-      // 计算简单匹配度
       const total = newVal.hardSkills.length
       const matched = matchedSkills.value.length
       matchScore.value = total > 0 ? Math.round((matched / total) * 100) : 0
@@ -322,7 +409,6 @@ watch(() => resumeStore.jdAnalysis, async (newVal) => {
 
 // 导出PDF
 const exportPDF = async () => {
-  // 等待对话框打开并渲染完成
   await new Promise(resolve => setTimeout(resolve, 500))
 
   if (!templateRef.value?.resumeRef) {
@@ -330,17 +416,32 @@ const exportPDF = async () => {
     return
   }
 
+  // 保存当前状态
+  const originalZoom = zoomLevel.value
+  const originalEditMode = isEditMode.value
+
   try {
     ElMessage.info('正在生成PDF...')
 
     const element = templateRef.value.resumeRef
+    
+    // 临时重置缩放为1，并退出编辑模式，确保导出与预览一致
+    zoomLevel.value = 1
+    isEditMode.value = false
+    
+    // 等待DOM更新
+    await new Promise(resolve => setTimeout(resolve, 200))
+
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
       logging: false,
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
+      allowTaint: true,
+      foreignObjectRendering: false,
+      imageTimeout: 0
     })
-
+    
     const imgData = canvas.toDataURL('image/png')
     const pdf = new jsPDF('p', 'mm', 'a4')
 
@@ -356,11 +457,9 @@ const exportPDF = async () => {
     let heightLeft = imgHeight * ratio
     let position = 0
 
-    // 添加第一页
     pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio)
     heightLeft -= pdfHeight
 
-    // 如果内容超过一页，添加新页面
     while (heightLeft > 0) {
       position = heightLeft - imgHeight * ratio
       pdf.addPage()
@@ -368,7 +467,6 @@ const exportPDF = async () => {
       heightLeft -= pdfHeight
     }
 
-    // 下载PDF
     const fileName = `${resumeStore.resumeData.basicInfo.name || '简历'}_${resumeStore.resumeData.basicInfo.jobTitle || '求职'}.pdf`
     pdf.save(fileName)
 
@@ -376,6 +474,10 @@ const exportPDF = async () => {
   } catch (error) {
     console.error('PDF导出错误:', error)
     ElMessage.error('PDF导出失败')
+  } finally {
+    // 确保无论成功或失败都恢复原始状态
+    zoomLevel.value = originalZoom
+    isEditMode.value = originalEditMode
   }
 }
 </script>
@@ -404,16 +506,12 @@ const exportPDF = async () => {
 .match-analysis {
   display: flex;
   gap: 20px;
+  align-items: flex-start;
   margin-bottom: 20px;
-  padding: 15px;
-  background: #f5f7fa;
-  border-radius: 8px;
 }
 
 .match-score {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0;
 }
 
 .score-circle {
@@ -441,17 +539,15 @@ const exportPDF = async () => {
 }
 
 .match-details h4 {
-  margin-bottom: 10px;
-  color: #333;
+  margin: 0 0 10px 0;
 }
 
-.skill-match,
-.skill-missing {
+.skill-match, .skill-missing {
   margin-bottom: 10px;
 }
 
 .match-label {
-  font-size: 12px;
+  font-size: 13px;
   color: #666;
   margin-bottom: 5px;
 }
@@ -463,90 +559,75 @@ const exportPDF = async () => {
 }
 
 .no-match {
-  color: #999;
   font-size: 12px;
+  color: #999;
 }
 
 .completion-rate {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 15px;
+  margin: 15px 0;
 }
 
 .rate-label {
   font-size: 14px;
   color: #666;
-  white-space: nowrap;
+  margin-bottom: 8px;
 }
 
 .resume-summary {
-  margin-bottom: 15px;
+  margin: 15px 0;
 }
 
 .resume-summary h4 {
-  margin-bottom: 10px;
+  margin: 0 0 10px 0;
+  font-size: 14px;
   color: #333;
+}
+
+.skills-tags-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skill-tag-item {
+  margin: 0;
+}
+
+.no-skills {
+  color: #999;
+  font-size: 12px;
 }
 
 .preview-hint {
   margin-top: 15px;
 }
 
-/* 预览对话框样式 */
-.preview-dialog :deep(.el-dialog) {
-  z-index: 2000 !important;
-}
-
-.preview-dialog :deep(.el-dialog__body) {
-  padding: 0;
-}
-
 .preview-container {
   display: flex;
   flex-direction: column;
-  height: 80vh;
+  gap: 15px;
 }
 
 .template-selector-dialog {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 15px;
-  padding: 15px 20px;
+  padding: 10px 15px;
   background: #f5f7fa;
-  border-bottom: 1px solid #e4e7ed;
+  border-radius: 8px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.template-selector-dialog .label {
-  font-size: 14px;
-  color: #666;
-}
-
-.export-btn {
-  margin-left: auto;
-}
-
-.resume-container-wrapper-dialog {
-  flex: 1;
-  overflow: auto;
-  padding: 20px;
-  background: #e8e8e8;
-  display: flex;
-  justify-content: center;
-}
-
-.resume-container-wrapper-dialog.edit-mode {
-  background: #e6f2ff;
-}
-
-/* 编辑工具栏样式 */
-.edit-toolbar {
+.template-selector {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 20px;
-  background: #f5f7fa;
-  border-bottom: 1px solid #e4e7ed;
+}
+
+.template-selector .label {
+  font-size: 14px;
+  color: #666;
 }
 
 .dialog-actions {
@@ -554,75 +635,80 @@ const exportPDF = async () => {
   gap: 10px;
 }
 
-/* 移动端适配 */
-@media screen and (max-width: 768px) {
-  .resume-preview {
-    padding: 10px;
-  }
-
-  .card-header {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .actions {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .actions .el-button {
-    flex: 1;
-  }
-
-  .match-analysis {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .match-score {
-    justify-content: center;
-  }
-
-  .completion-rate {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .template-selector-dialog {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .template-selector-dialog .export-btn {
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .resume-container-wrapper-dialog {
-    padding: 10px;
-  }
+.edit-mode-banner {
+  margin-bottom: 5px;
 }
 
-@media screen and (max-width: 480px) {
-  .title {
-    font-size: 14px;
-  }
+.resume-container-wrapper-dialog {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: #f0f2f5;
+  border-radius: 8px;
+  overflow: auto;
+  max-height: 65vh;
+}
 
-  .score-circle {
-    width: 60px;
-    height: 60px;
-  }
+.resume-container-wrapper-dialog.edit-mode {
+  background: #e6f2ff;
+  border: 2px dashed #409eff;
+}
 
-  .score-number {
-    font-size: 20px;
-  }
+.resume-container-wrapper-dialog.fullscreen-wrapper {
+  max-height: none;
+  height: calc(100vh - 180px);
+  padding: 40px;
+}
 
-  .match-tags {
-    gap: 3px;
-  }
+.resume-scale-wrapper {
+  transform-origin: top center;
+}
 
-  .match-tags .el-tag {
-    font-size: 11px;
+/* 全屏对话框样式 */
+:deep(.fullscreen-dialog) {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.fullscreen-dialog .el-dialog__header) {
+  padding: 15px 20px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+:deep(.fullscreen-dialog .el-dialog__body) {
+  flex: 1;
+  padding: 0;
+  overflow: hidden;
+}
+
+:deep(.preview-dialog .el-dialog__body) {
+  padding: 10px 20px 20px;
+}
+
+/* 缩放控制样式 */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-right: 1px solid #dcdfe6;
+  margin-right: 10px;
+}
+
+.zoom-value {
+  font-size: 13px;
+  color: #606266;
+  min-width: 45px;
+  text-align: center;
+}
+
+@media print {
+  .template-selector-dialog,
+  .edit-mode-banner {
+    display: none !important;
   }
 }
 </style>

@@ -29,8 +29,49 @@
           <el-form-item label="姓名">
             <el-input v-model="resumeStore.resumeData.basicInfo.name" placeholder="请输入姓名" />
           </el-form-item>
-          <el-form-item label="年龄">
-            <el-input v-model="resumeStore.resumeData.basicInfo.age" placeholder="请输入年龄" />
+          <el-form-item label="性别">
+            <el-select v-model="resumeStore.resumeData.basicInfo.gender" placeholder="请选择性别" style="width: 100%">
+              <el-option label="男" value="男" />
+              <el-option label="女" value="女" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="政治面貌">
+            <el-select v-model="resumeStore.resumeData.basicInfo.politicalStatus" placeholder="请选择政治面貌" style="width: 100%">
+              <el-option label="中共党员" value="中共党员" />
+              <el-option label="中共预备党员" value="中共预备党员" />
+              <el-option label="共青团员" value="共青团员" />
+              <el-option label="群众" value="群众" />
+              <el-option label="民主党派" value="民主党派" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="出生年月">
+            <div class="birth-date-picker">
+              <el-select v-model="birthYear" placeholder="年份" style="width: 120px" @change="updateBirthDate">
+                <el-option
+                  v-for="year in yearOptions"
+                  :key="year"
+                  :label="year + '年'"
+                  :value="year"
+                />
+              </el-select>
+              <el-select v-model="birthMonth" placeholder="月份" style="width: 100px; margin-left: 10px;" @change="updateBirthDate">
+                <el-option
+                  v-for="month in 12"
+                  :key="month"
+                  :label="month + '月'"
+                  :value="month"
+                />
+              </el-select>
+            </div>
+          </el-form-item>
+          <el-form-item label="学历">
+            <el-select v-model="resumeStore.resumeData.basicInfo.degree" placeholder="请选择学历" style="width: 100%">
+              <el-option label="高中" value="高中" />
+              <el-option label="大专" value="大专" />
+              <el-option label="本科" value="本科" />
+              <el-option label="硕士" value="硕士" />
+              <el-option label="博士" value="博士" />
+            </el-select>
           </el-form-item>
           <el-form-item label="电话">
             <el-input v-model="resumeStore.resumeData.basicInfo.phone" placeholder="请输入电话" />
@@ -51,14 +92,17 @@
           <el-form-item label="求职岗位">
             <el-input v-model="resumeStore.resumeData.basicInfo.jobTitle" placeholder="请输入求职岗位" />
           </el-form-item>
+          <el-form-item label="个性签名">
+            <el-input v-model="resumeStore.resumeData.basicInfo.signature" type="textarea" :rows="2" placeholder="请输入个性签名，如：热爱技术，追求极致" />
+          </el-form-item>
           <el-form-item label="期望城市">
             <el-cascader
-              v-model="selectedTargetLocation"
-              :options="regionOptions"
-              :props="{ value: 'value', label: 'label', children: 'children' }"
-              placeholder="请选择省/市/区"
+              v-model="selectedTargetCities"
+              :options="cityLevelOptions"
+              :props="{ value: 'value', label: 'label', children: 'children', multiple: true, emitPath: true }"
+              placeholder="可选择多个期望城市"
               style="width: 100%"
-              @change="handleTargetLocationChange"
+              @change="handleTargetCitiesChange"
             />
           </el-form-item>
         </el-form>
@@ -119,6 +163,40 @@
         </el-button>
       </el-tab-pane>
 
+      <!-- 项目经历 -->
+      <el-tab-pane label="项目经历" name="project">
+        <div v-for="project in resumeStore.resumeData.projects" :key="project.id" class="experience-item">
+          <el-card>
+            <template #header>
+              <div class="card-header">
+                <span>{{ project.name || '未填写项目' }}</span>
+                <div>
+                  <el-button type="primary" size="small" @click="optimizeProject(project)">AI优化</el-button>
+                  <el-button type="danger" size="small" @click="resumeStore.removeProject(project.id)">删除</el-button>
+                </div>
+              </div>
+            </template>
+            <el-form label-width="80px">
+              <el-form-item label="项目名称">
+                <el-input v-model="project.name" />
+              </el-form-item>
+              <el-form-item label="担任角色">
+                <el-input v-model="project.role" />
+              </el-form-item>
+              <el-form-item label="技术栈">
+                <el-input v-model="project.techStack" placeholder="如：Vue3 + TypeScript + Node.js" />
+              </el-form-item>
+              <el-form-item label="项目描述">
+                <el-input v-model="project.description" type="textarea" :rows="4" placeholder="描述项目背景、职责和成果..." />
+              </el-form-item>
+            </el-form>
+          </el-card>
+        </div>
+        <el-button type="primary" @click="addProject">
+          <el-icon><Plus /></el-icon>添加项目经历
+        </el-button>
+      </el-tab-pane>
+
       <!-- 工作经历 -->
       <el-tab-pane label="工作经历" name="work">
         <div v-for="work in resumeStore.resumeData.workExperience" :key="work.id" class="experience-item">
@@ -168,54 +246,16 @@
         </el-button>
       </el-tab-pane>
 
-      <!-- 项目经历 -->
-      <el-tab-pane label="项目经历" name="project">
-        <div v-for="project in resumeStore.resumeData.projects" :key="project.id" class="experience-item">
-          <el-card>
-            <template #header>
-              <div class="card-header">
-                <span>{{ project.name || '未填写项目' }}</span>
-                <div>
-                  <el-button type="primary" size="small" @click="optimizeProject(project)">AI优化</el-button>
-                  <el-button type="danger" size="small" @click="resumeStore.removeProject(project.id)">删除</el-button>
-                </div>
-              </div>
-            </template>
-            <el-form label-width="80px">
-              <el-form-item label="项目名称">
-                <el-input v-model="project.name" />
-              </el-form-item>
-              <el-form-item label="担任角色">
-                <el-input v-model="project.role" />
-              </el-form-item>
-              <el-form-item label="技术栈">
-                <el-input v-model="project.techStack" placeholder="如：Vue3 + TypeScript + Node.js" />
-              </el-form-item>
-              <el-form-item label="项目描述">
-                <el-input v-model="project.description" type="textarea" :rows="4" placeholder="描述项目背景、职责和成果..." />
-              </el-form-item>
-            </el-form>
-          </el-card>
-        </div>
-        <el-button type="primary" @click="addProject">
-          <el-icon><Plus /></el-icon>添加项目经历
-        </el-button>
-      </el-tab-pane>
-
       <!-- 技能标签 -->
       <el-tab-pane label="技能标签" name="skills">
         <el-form label-width="100px">
           <el-form-item label="技能标签">
-            <el-select-v2
-              v-model="selectedSkills"
-              :options="skillOptions"
-              placeholder="选择或输入技能标签"
-              multiple
-              filterable
-              allow-create
-              clearable
-              style="width: 100%"
-              @change="handleSkillsChange"
+            <el-input
+              v-model="skillsInput"
+              type="textarea"
+              :rows="3"
+              placeholder="输入技能标签，用顿号（、）分隔，如：Vue.js、TypeScript、JavaScript、AI产品"
+              @blur="parseSkillsInput"
             />
           </el-form-item>
           <el-form-item>
@@ -271,11 +311,29 @@ import { ElMessage } from 'element-plus'
 import { Plus, MagicStick, Loading } from '@element-plus/icons-vue'
 import { useResumeStore, type Education, type WorkExperience, type Project } from '@/stores/resume'
 import { aiService } from '@/services/aiService'
-import { regionData, getFullAddress } from '@/data/regionData'
+import { regionData, getCityLevelData, getCityDisplayName } from '@/data/regionData'
 
 const resumeStore = useResumeStore()
 const activeTab = ref('basic')
 const selectedSkills = ref<string[]>([])
+const skillsInput = ref('')
+
+// 从 store 初始化 skillsInput
+const initSkillsInput = () => {
+  skillsInput.value = resumeStore.resumeData.skills.join('、')
+}
+
+// 解析技能标签输入
+const parseSkillsInput = () => {
+  const skills = skillsInput.value
+    .split('、')
+    .map(s => s.trim())
+    .filter(s => s.length > 0)
+  resumeStore.updateSkills(skills)
+}
+
+// 初始化
+initSkillsInput()
 
 // 照片上传
 const photoPreview = ref('')
@@ -327,19 +385,20 @@ loadPhotoFromStorage()
 
 // 省市区选择
 const regionOptions = regionData
+const cityLevelOptions = getCityLevelData()
 const selectedLocation = ref<string[]>([])
-const selectedTargetLocation = ref<string[]>([])
+const selectedTargetCities = ref<string[][]>([])
 
 // 处理所在城市选择变化
 const handleLocationChange = (value: string[]) => {
   selectedLocation.value = value
-  resumeStore.resumeData.basicInfo.location = getFullAddress(value)
+  resumeStore.resumeData.basicInfo.location = value[value.length - 1] || ''
 }
 
-// 处理期望城市选择变化
-const handleTargetLocationChange = (value: string[]) => {
-  selectedTargetLocation.value = value
-  resumeStore.resumeData.basicInfo.targetCity = getFullAddress(value)
+// 处理期望城市选择变化（多选，只到市级别）
+const handleTargetCitiesChange = (value: string[][]) => {
+  selectedTargetCities.value = value
+  resumeStore.resumeData.basicInfo.targetCities = value.map(cityPath => getCityDisplayName(cityPath))
 }
 
 const skillOptions = [
@@ -359,6 +418,37 @@ const skillOptions = [
   { label: 'Linux', value: 'Linux' },
   { label: '微信小程序', value: '微信小程序' }
 ]
+
+// 出生年月选择
+const currentYear = new Date().getFullYear()
+const yearOptions = Array.from({ length: 60 }, (_, i) => currentYear - i)
+const birthYear = ref<number | null>(null)
+const birthMonth = ref<number | null>(null)
+
+// 从 store 中解析已有的出生年月
+const parseBirthDate = () => {
+  const birthDate = resumeStore.resumeData.basicInfo.birthDate
+  if (birthDate) {
+    const parts = birthDate.split('.')
+    if (parts.length === 2) {
+      birthYear.value = parseInt(parts[0])
+      birthMonth.value = parseInt(parts[1])
+    }
+  }
+}
+
+// 初始化时解析
+parseBirthDate()
+
+// 更新出生年月
+const updateBirthDate = () => {
+  if (birthYear.value && birthMonth.value) {
+    const monthStr = birthMonth.value.toString().padStart(2, '0')
+    resumeStore.resumeData.basicInfo.birthDate = `${birthYear.value}.${monthStr}`
+  } else if (!birthYear.value && !birthMonth.value) {
+    resumeStore.resumeData.basicInfo.birthDate = ''
+  }
+}
 
 const addEducation = () => {
   const newEdu: Education = {
@@ -406,6 +496,7 @@ const removeSkill = (skill: string) => {
   const newSkills = resumeStore.resumeData.skills.filter(s => s !== skill)
   resumeStore.updateSkills(newSkills)
   selectedSkills.value = newSkills
+  skillsInput.value = newSkills.join('、')
 }
 
 // AI优化相关
@@ -580,6 +671,12 @@ const generateSelfEvaluation = async () => {
   font-size: 10px;
   color: #909399;
   margin-top: 4px;
+}
+
+/* 出生年月选择器样式 */
+.birth-date-picker {
+  display: flex;
+  align-items: center;
 }
 
 /* 移动端适配 */

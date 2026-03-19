@@ -3,12 +3,16 @@ import { ref, computed } from 'vue'
 
 export interface BasicInfo {
   name: string
-  age: string
+  gender: string
+  politicalStatus: string
+  birthDate: string
+  degree: string
   phone: string
   email: string
   location: string
   jobTitle: string
-  targetCity: string
+  targetCities: string[]
+  signature: string
 }
 
 export interface Education {
@@ -63,12 +67,16 @@ export const useResumeStore = defineStore('resume', () => {
   const resumeData = ref<ResumeData>({
     basicInfo: {
       name: '',
-      age: '',
+      gender: '',
+      politicalStatus: '',
+      birthDate: '',
+      degree: '',
       phone: '',
       email: '',
       location: '',
       jobTitle: '',
-      targetCity: ''
+      targetCities: [],
+      signature: ''
     },
     education: [],
     workExperience: [],
@@ -229,6 +237,27 @@ export const useResumeStore = defineStore('resume', () => {
     matchScore.value = 0
   }
 
+  // 保存到 localStorage
+  const saveToLocalStorage = () => {
+    try {
+      localStorage.setItem('resume_data', JSON.stringify(resumeData.value))
+    } catch (error) {
+      console.error('保存简历数据失败:', error)
+    }
+  }
+
+  // 从 localStorage 加载
+  const loadFromLocalStorage = () => {
+    try {
+      const saved = localStorage.getItem('resume_data')
+      if (saved) {
+        resumeData.value = JSON.parse(saved)
+      }
+    } catch (error) {
+      console.error('加载简历数据失败:', error)
+    }
+  }
+
   return {
     resumeData,
     jdAnalysis,
@@ -245,6 +274,8 @@ export const useResumeStore = defineStore('resume', () => {
     updateSelfEvaluation,
     setJDAnalysis,
     setMatchScore,
-    clearData
+    clearData,
+    saveToLocalStorage,
+    loadFromLocalStorage
   }
 })

@@ -357,11 +357,37 @@ export const regionData: RegionItem[] = [
   }
 ]
 
+// 直辖市列表
+const municipalities = ['北京市', '上海市', '天津市', '重庆市']
+
+// 获取只到市级别的级联数据（用于期望城市选择）
+export const getCityLevelData = (): RegionItem[] => {
+  return regionData.map(province => {
+    // 如果是直辖市，直接返回省/市本身，不需要子级
+    if (municipalities.includes(province.value)) {
+      return {
+        value: province.value,
+        label: province.value,
+        children: undefined
+      }
+    }
+    // 其他省份保留市级
+    return {
+      value: province.value,
+      label: province.value,
+      children: province.children
+    }
+  })
+}
+
 // 获取所有城市列表（用于期望城市选择）
 export const getAllCities = (): string[] => {
   const cities: string[] = []
   regionData.forEach(province => {
-    if (province.children) {
+    if (municipalities.includes(province.value)) {
+      // 直辖市直接添加市名
+      cities.push(province.value)
+    } else if (province.children) {
       province.children.forEach(city => {
         cities.push(city.value)
       })
@@ -373,15 +399,29 @@ export const getAllCities = (): string[] => {
 // 根据城市名获取完整地址
 export const getFullAddress = (selectedValues: string[]): string => {
   if (selectedValues.length === 0) return ''
-  if (selectedValues.length === 1) return selectedValues[0] || ''
+  if (selectedValues.length === 1) {
+    // 单选可能是直辖市
+    return selectedValues[0] || ''
+  }
   if (selectedValues.length === 2) {
     const province = selectedValues[0] || ''
     const city = selectedValues[1] || ''
     // 如果是直辖市，直接返回市+区
-    if (['北京市', '上海市', '天津市', '重庆市'].includes(province)) {
+    if (municipalities.includes(province)) {
       return `${province}${city}`
     }
     return `${province}${city}`
   }
   return selectedValues.join('')
+}
+
+// 获取城市显示名称（用于期望城市）
+export const getCityDisplayName = (selectedValues: string[]): string => {
+  if (selectedValues.length === 0) return ''
+  // 如果是直辖市，直接返回市名
+  if (selectedValues.length === 1 && municipalities.includes(selectedValues[0] || '')) {
+    return selectedValues[0] || ''
+  }
+  // 返回最后一级（市名）
+  return selectedValues[selectedValues.length - 1] || ''
 }

@@ -171,6 +171,9 @@ const clearAll = () => {
 .right-panel {
   position: sticky;
   top: 20px;
+  height: fit-content;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
 }
 
 .help-content {
