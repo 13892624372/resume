@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 export interface BasicInfo {
   name: string
@@ -62,9 +62,17 @@ export interface JDAnalysis {
   matchTips: string
 }
 
-export const useResumeStore = defineStore('resume', () => {
-  // 简历数据
-  const resumeData = ref<ResumeData>({
+// 从 localStorage 加载初始数据
+const loadInitialData = (): ResumeData => {
+  try {
+    const saved = localStorage.getItem('resume_data')
+    if (saved) {
+      return JSON.parse(saved)
+    }
+  } catch (error) {
+    console.error('加载简历数据失败:', error)
+  }
+  return {
     basicInfo: {
       name: '',
       gender: '',
@@ -83,7 +91,12 @@ export const useResumeStore = defineStore('resume', () => {
     projects: [],
     skills: [],
     selfEvaluation: ''
-  })
+  }
+}
+
+export const useResumeStore = defineStore('resume', () => {
+  // 简历数据（从 localStorage 初始化）
+  const resumeData = ref<ResumeData>(loadInitialData())
 
   // JD分析结果
   const jdAnalysis = ref<JDAnalysis | null>(null)
@@ -257,6 +270,15 @@ export const useResumeStore = defineStore('resume', () => {
       console.error('加载简历数据失败:', error)
     }
   }
+
+  // 监听简历数据变化，自动保存到 localStorage
+  watch(
+    resumeData,
+    () => {
+      saveToLocalStorage()
+    },
+    { deep: true }
+  )
 
   return {
     resumeData,

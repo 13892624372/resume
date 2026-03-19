@@ -4,7 +4,7 @@
       <!-- 头像区块 -->
       <div v-if="photoUrl || editMode" class="sidebar-block photo-section" :class="{ 'editable-section': editMode }">
         <div class="photo-container">
-          <img v-if="photoUrl" :src="photoUrl" alt="个人照片" class="photo" />
+          <div v-if="photoUrl" class="photo-bg" :style="{ backgroundImage: `url(${photoUrl})` }"></div>
           <div v-else-if="editMode" class="photo-placeholder">
             <el-icon><User /></el-icon>
           </div>
@@ -944,10 +944,19 @@ defineExpose({
   background: white;
 }
 
+.photo-bg {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 .photo {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   background-color: #f5f5f5;
 }
 

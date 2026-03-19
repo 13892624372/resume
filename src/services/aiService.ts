@@ -212,6 +212,63 @@ ${description}
       return 60
     }
   }
+
+  // 多维度匹配度分析（简化版，避免请求过长）
+  async analyzeMatchDimensions(
+    resumeData: {
+      skills: string[]
+      projects: { name: string; description: string; technologies: string[] }[]
+      workExperience: { company: string; position: string; description: string }[]
+      education: { school: string; major: string; degree: string }[]
+    },
+    jdAnalysis: JDAnalysisResult
+  ): Promise<{
+    overallScore: number
+    dimensions: {
+      skills: { score: number; matched: string[]; missing: string[] }
+      projects: { score: number; relevance: string[] }
+      experience: { score: number; years: number; required: string }
+      education: { score: number; match: boolean }
+    }
+    suggestions: string[]
+  }> {
+    // 如果请求内容过长，直接返回本地计算结果，避免500错误
+    const estimatedLength = JSON.stringify(resumeData).length + JSON.stringify(jdAnalysis).length
+    if (estimatedLength > 3000) {
+      console.warn('请求内容过长，使用本地计算')
+      throw new Error('Request too long')
+    }
+
+    const prompt = `分析简历与岗位匹配度：
+
+简历技能：${resumeData.skills.join('、')}
+项目：${resumeData.projects.map(p => p.name).join('、')}
+岗位：${jdAnalysis.position}
+要求技能：${jdAnalysis.hardSkills.join('、')}
+经验要求：${jdAnalysis.experienceRequired}
+
+返回JSON格式：
+{
+  "overallScore": 85,
+  "dimensions": {
+    "skills": {"score": 80, "matched": [], "missing": []},
+    "projects": {"score": 90, "relevance": []},
+    "experience": {"score": 85, "years": 0, "required": ""},
+    "education": {"score": 100, "match": true}
+  },
+  "suggestions": ["建议1", "建议2"]
+}`
+
+    try {
+      const result = await this.request(prompt)
+      const cleanJson = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+      return JSON.parse(cleanJson)
+    } catch (error) {
+      console.error('匹配度分析错误:', error)
+      // 抛出错误让调用方处理
+      throw error
+    }
+  }
 }
 
 export const aiService = new AIService()

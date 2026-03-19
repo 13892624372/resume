@@ -22,33 +22,79 @@
         </div>
         <div class="match-details">
           <h4>匹配分析</h4>
+          
+          <!-- 多维度评分 -->
+          <div v-if="matchDimensions" class="dimension-scores">
+            <div class="dimension-item">
+              <span class="dimension-name">技能匹配</span>
+              <el-progress :percentage="matchDimensions.skills.score" :color="scoreColor" :show-text="true" :stroke-width="8" />
+            </div>
+            <div class="dimension-item">
+              <span class="dimension-name">项目相关</span>
+              <template v-if="matchDimensions.projects.score > 0">
+                <el-progress :percentage="matchDimensions.projects.score" :color="scoreColor" :show-text="true" :stroke-width="8" />
+              </template>
+              <template v-else>
+                <span class="dimension-empty">未填写</span>
+              </template>
+            </div>
+            <div class="dimension-item">
+              <span class="dimension-name">经验匹配</span>
+              <template v-if="matchDimensions.experience.score > 0">
+                <el-progress :percentage="matchDimensions.experience.score" :color="scoreColor" :show-text="true" :stroke-width="8" />
+              </template>
+              <template v-else>
+                <span class="dimension-empty">未填写</span>
+              </template>
+            </div>
+            <div class="dimension-item">
+              <span class="dimension-name">教育背景</span>
+              <template v-if="matchDimensions.education.score > 0">
+                <el-progress :percentage="matchDimensions.education.score" :color="scoreColor" :show-text="true" :stroke-width="8" />
+              </template>
+              <template v-else>
+                <span class="dimension-empty">未填写</span>
+              </template>
+            </div>
+          </div>
+          
           <div class="skill-match">
             <div class="match-label">已匹配技能：</div>
             <div class="match-tags">
               <el-tag
-                v-for="skill in matchedSkills"
+                v-for="skill in matchDimensions?.skills.matched || matchedSkills"
                 :key="skill"
                 type="success"
                 size="small"
               >
                 {{ skill }}
               </el-tag>
-              <span v-if="matchedSkills.length === 0" class="no-match">暂无匹配技能</span>
+              <span v-if="(matchDimensions?.skills.matched.length || matchedSkills.length) === 0" class="no-match">暂无匹配技能</span>
             </div>
           </div>
           <div class="skill-missing">
             <div class="match-label">缺失技能：</div>
             <div class="match-tags">
               <el-tag
-                v-for="skill in missingSkills"
+                v-for="skill in matchDimensions?.skills.missing || missingSkills"
                 :key="skill"
                 type="danger"
                 size="small"
               >
                 {{ skill }}
               </el-tag>
-              <span v-if="missingSkills.length === 0" class="no-match">无缺失技能</span>
+              <span v-if="(matchDimensions?.skills.missing.length || missingSkills.length) === 0" class="no-match">无缺失技能</span>
             </div>
+          </div>
+          
+          <!-- 改进建议 -->
+          <div v-if="matchSuggestions.length > 0" class="match-suggestions">
+            <div class="match-label">改进建议：</div>
+            <ul class="suggestion-list">
+              <li v-for="(suggestion, index) in matchSuggestions" :key="index">
+                {{ suggestion }}
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -239,6 +285,13 @@ const editableResumeData = ref<ResumeData>(JSON.parse(JSON.stringify(resumeStore
 
 // 匹配度分数
 const matchScore = ref(0)
+const matchDimensions = ref<{
+  skills: { score: number; matched: string[]; missing: string[] }
+  projects: { score: number; relevance: string[] }
+  experience: { score: number; years: number; required: string }
+  education: { score: number; match: boolean }
+} | null>(null)
+const matchSuggestions = ref<string[]>([])
 
 // 简历容器样式
 const resumeWrapperStyle = computed(() => {
@@ -348,28 +401,45 @@ const handleDataUpdate = (newData: ResumeData) => {
   editableResumeData.value = newData
 }
 
-// 计算匹配的技能
+// 计算匹配的技能（本地计算，用于快速显示）
 const matchedSkills = computed(() => {
   if (!resumeStore.jdAnalysis) return []
+  
+  // 从技能列表、项目名称、技术栈、描述中提取所有可能的技能
   const resumeSkills = resumeStore.resumeData.skills.map(s => s.toLowerCase().trim())
-  const resumeText = [
+  const projectTexts = resumeStore.resumeData.projects.map(p => 
+    `${p.name} ${p.techStack} ${p.description}`.toLowerCase()
+  )
+  const workTexts = resumeStore.resumeData.workExperience.map(w =>
+    `${w.position} ${w.description}`.toLowerCase()
+  )
+  const allText = [
     ...resumeStore.resumeData.skills,
     resumeStore.resumeData.basicInfo.jobTitle,
-    ...resumeStore.resumeData.workExperience.map(w => w.position),
-    ...resumeStore.resumeData.workExperience.map(w => w.description),
-    ...resumeStore.resumeData.projects.map(p => p.description),
+    ...projectTexts,
+    ...workTexts,
     resumeStore.resumeData.selfEvaluation
   ].join(' ').toLowerCase()
 
   return resumeStore.jdAnalysis.hardSkills.filter(skill => {
     const skillLower = skill.toLowerCase().trim()
+    // 1. 检查是否在技能列表中（支持互相包含）
     const inSkills = resumeSkills.some(rs => 
       rs === skillLower || 
       rs.includes(skillLower) || 
       skillLower.includes(rs)
     )
-    const inText = resumeText.includes(skillLower)
-    return inSkills || inText
+    if (inSkills) return true
+    
+    // 2. 检查是否在所有文本中（支持互相包含）
+    // 将文本拆分成词组进行检查
+    const textParts = allText.split(/[\s,，、]+/)
+    const inText = textParts.some(part => 
+      part === skillLower ||
+      part.includes(skillLower) ||
+      skillLower.includes(part)
+    )
+    return inText
   })
 })
 
@@ -389,23 +459,177 @@ const scoreColor = computed(() => {
   return '#f56c6c'
 })
 
-// 监听JD分析变化，计算匹配度
-watch(() => resumeStore.jdAnalysis, async (newVal) => {
-  if (newVal && resumeStore.resumeData.skills.length > 0) {
-    try {
-      const score = await aiService.calculateMatchScore(
-        resumeStore.resumeData.skills,
-        newVal.hardSkills
-      )
-      matchScore.value = score
-      resumeStore.setMatchScore(score)
-    } catch (error) {
-      const total = newVal.hardSkills.length
-      const matched = matchedSkills.value.length
-      matchScore.value = total > 0 ? Math.round((matched / total) * 100) : 0
+// 计算本地多维度匹配度（基于实际简历内容）
+const calculateLocalMatchDimensions = (jdAnalysis: JDAnalysis) => {
+  const resumeData = resumeStore.resumeData
+  
+  // 1. 技能匹配度（基于实际匹配的技能）
+  const localMatched = matchedSkills.value
+  const localMissing = missingSkills.value
+  const skillMatchRate = jdAnalysis.hardSkills.length > 0 
+    ? Math.round((localMatched.length / jdAnalysis.hardSkills.length) * 100) 
+    : 0
+  
+  // 2. 项目相关度（检查是否有项目经历）
+  const hasProjects = resumeData.projects.length > 0 && 
+    resumeData.projects.some(p => p.name?.trim() || p.description?.trim() || p.techStack?.trim())
+  // 项目匹配度：如果有项目，检查项目描述中是否包含JD关键词
+  let projectMatchRate = 0
+  if (hasProjects) {
+    const projectText = resumeData.projects.map(p => `${p.name} ${p.description} ${p.techStack}`).join(' ').toLowerCase()
+    // 如果有JD关键词，检查匹配度；如果没有关键词，只要有项目就给60分
+    if (jdAnalysis.keywords && jdAnalysis.keywords.length > 0) {
+      const matchedKeywords = jdAnalysis.keywords.filter(kw => projectText.includes(kw.toLowerCase()))
+      projectMatchRate = Math.round((matchedKeywords.length / jdAnalysis.keywords.length) * 100)
+    } else {
+      projectMatchRate = 60 // 有项目但没有JD关键词，给基础分
     }
   }
+  
+  // 3. 经验匹配度（检查是否有工作经历）
+  const hasWorkExperience = resumeData.workExperience.length > 0 &&
+    resumeData.workExperience.some(w => w.company?.trim() || w.position?.trim() || w.description?.trim())
+  // 经验匹配度：如果有工作经历，检查是否包含JD关键词
+  let experienceMatchRate = 0
+  if (hasWorkExperience) {
+    const workText = resumeData.workExperience.map(w => `${w.company} ${w.position} ${w.description}`).join(' ').toLowerCase()
+    // 如果有JD关键词，检查匹配度；如果没有关键词，只要有经历就给60分
+    if (jdAnalysis.keywords && jdAnalysis.keywords.length > 0) {
+      const matchedKeywords = jdAnalysis.keywords.filter(kw => workText.includes(kw.toLowerCase()))
+      experienceMatchRate = Math.round((matchedKeywords.length / jdAnalysis.keywords.length) * 100)
+    } else {
+      experienceMatchRate = 60 // 有经历但没有JD关键词，给基础分
+    }
+  }
+  
+  // 4. 教育背景匹配度
+  const hasEducation = resumeData.education.length > 0 &&
+    resumeData.education.some(e => e.school?.trim() && e.major?.trim())
+  const educationMatchRate = hasEducation ? 100 : 0
+  
+  return {
+    skills: {
+      score: skillMatchRate,
+      matched: localMatched,
+      missing: localMissing
+    },
+    projects: {
+      score: projectMatchRate,
+      relevance: hasProjects ? resumeData.projects.map(p => p.name).filter(Boolean) : []
+    },
+    experience: {
+      score: experienceMatchRate,
+      years: resumeData.workExperience.length,
+      required: jdAnalysis.experienceRequired
+    },
+    education: {
+      score: educationMatchRate,
+      match: hasEducation
+    }
+  }
+}
+
+// 计算并更新匹配度（优先使用AI分析）
+const updateMatchAnalysis = async () => {
+  const jdAnalysis = resumeStore.jdAnalysis
+  if (!jdAnalysis) return
+  
+  try {
+    // 尝试使用AI进行多维度匹配度分析
+    const resumeData = resumeStore.resumeData
+    const analysis = await aiService.analyzeMatchDimensions(
+      {
+        skills: resumeData.skills,
+        projects: resumeData.projects.map(p => ({
+          name: p.name,
+          description: p.description,
+          technologies: p.techStack ? p.techStack.split(/[,，、\s]+/) : []
+        })),
+        workExperience: resumeData.workExperience.map(w => ({
+          company: w.company,
+          position: w.position,
+          description: w.description
+        })),
+        education: resumeData.education.map(e => ({
+          school: e.school,
+          major: e.major,
+          degree: e.degree
+        }))
+      },
+      jdAnalysis
+    )
+    
+    // 使用AI返回的结果，但技能匹配以本地计算为准（更准确）
+    const localMatched = matchedSkills.value
+    const localMissing = missingSkills.value
+    const skillMatchRate = jdAnalysis.hardSkills.length > 0 
+      ? Math.round((localMatched.length / jdAnalysis.hardSkills.length) * 100) 
+      : 0
+    
+    matchScore.value = analysis.overallScore
+    matchDimensions.value = {
+      ...analysis.dimensions,
+      skills: {
+        score: skillMatchRate,
+        matched: localMatched,
+        missing: localMissing
+      }
+    }
+    matchSuggestions.value = analysis.suggestions
+    resumeStore.setMatchScore(analysis.overallScore)
+    
+  } catch (error) {
+    console.log('AI匹配度分析失败，使用本地计算:', error)
+    
+    // AI失败时回退到本地计算
+    const dimensions = calculateLocalMatchDimensions(jdAnalysis)
+    
+    const weights = { skills: 0.4, projects: 0.3, experience: 0.2, education: 0.1 }
+    const overallScore = Math.round(
+      dimensions.skills.score * weights.skills +
+      dimensions.projects.score * weights.projects +
+      dimensions.experience.score * weights.experience +
+      dimensions.education.score * weights.education
+    )
+    
+    matchScore.value = overallScore
+    matchDimensions.value = dimensions
+    
+    const suggestions: string[] = []
+    if (dimensions.skills.score < 50) {
+      suggestions.push(`技能匹配度较低，建议学习：${dimensions.skills.missing.slice(0, 3).join('、')}`)
+    }
+    if (dimensions.projects.score === 0) {
+      suggestions.push('缺少项目经历，建议补充相关项目')
+    }
+    if (dimensions.experience.score === 0) {
+      suggestions.push('缺少工作经历，建议补充实习或工作经验')
+    }
+    if (dimensions.education.score === 0) {
+      suggestions.push('缺少教育背景信息')
+    }
+    if (suggestions.length === 0) {
+      suggestions.push('简历整体匹配度良好，建议继续优化项目描述')
+    }
+    matchSuggestions.value = suggestions
+    
+    resumeStore.setMatchScore(overallScore)
+  }
+}
+
+// 监听JD分析变化
+watch(() => resumeStore.jdAnalysis, async (newVal) => {
+  if (newVal) {
+    await updateMatchAnalysis()
+  }
 }, { immediate: true })
+
+// 监听简历数据变化（深度监听）
+watch(() => resumeStore.resumeData, async () => {
+  if (resumeStore.jdAnalysis) {
+    await updateMatchAnalysis()
+  }
+}, { deep: true })
 
 // 导出PDF
 const exportPDF = async () => {
@@ -439,7 +663,16 @@ const exportPDF = async () => {
       backgroundColor: '#ffffff',
       allowTaint: true,
       foreignObjectRendering: false,
-      imageTimeout: 0
+      imageTimeout: 0,
+      onclone: (clonedDoc) => {
+        // 确保克隆的文档中背景图片样式正确
+        const photoBgs = clonedDoc.querySelectorAll('.photo-bg')
+        photoBgs.forEach(photoBg => {
+          ;(photoBg as HTMLElement).style.backgroundSize = 'cover'
+          ;(photoBg as HTMLElement).style.backgroundPosition = 'center'
+          ;(photoBg as HTMLElement).style.backgroundRepeat = 'no-repeat'
+        })
+      }
     })
     
     const imgData = canvas.toDataURL('image/png')
@@ -542,8 +775,55 @@ const exportPDF = async () => {
   margin: 0 0 10px 0;
 }
 
+.dimension-scores {
+  margin-bottom: 15px;
+}
+
+.dimension-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 10px;
+}
+
+.dimension-name {
+  font-size: 12px;
+  color: #666;
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.dimension-empty {
+  font-size: 12px;
+  color: #999;
+  flex: 1;
+  font-style: italic;
+}
+
+.dimension-item .el-progress {
+  flex: 1;
+}
+
 .skill-match, .skill-missing {
   margin-bottom: 10px;
+}
+
+.match-suggestions {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px dashed #e0e0e0;
+}
+
+.suggestion-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #666;
+}
+
+.suggestion-list li {
+  margin-bottom: 5px;
+  line-height: 1.5;
 }
 
 .match-label {
