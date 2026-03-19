@@ -935,8 +935,8 @@ defineExpose({
 }
 
 .photo-container {
-  width: 90px;
-  height: 90px;
+  width: 120px;
+  height: 120px;
   margin: 0 auto 15px;
   border-radius: 50%;
   overflow: hidden;
