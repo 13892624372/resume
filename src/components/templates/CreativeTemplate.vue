@@ -48,6 +48,16 @@
           />
         </h3>
         <div class="personal-info-list">
+          <div v-if="localData.basicInfo.name || editMode" class="personal-info-item">
+            <span class="info-label">姓名：</span>
+            <EditableField
+              v-model="localData.basicInfo.name"
+              :edit-mode="editMode"
+              tag="span"
+              placeholder="姓名"
+              @update:model-value="updateBasicInfo('name', $event)"
+            />
+          </div>
           <div v-if="localData.basicInfo.gender || editMode" class="personal-info-item">
             <span class="info-label">性别：</span>
             <EditableField
