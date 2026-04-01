@@ -204,6 +204,9 @@
                 {{ isEditMode ? '完成编辑' : '编辑简历' }}
               </el-button>
             </el-tooltip>
+            <el-button type="success" size="small" @click="exportWord" class="export-btn" :disabled="isEditMode">
+              <el-icon><Document /></el-icon>导出Word
+            </el-button>
             <el-button type="primary" size="small" @click="exportPDF" class="export-btn" :disabled="isEditMode">
               <el-icon><Download /></el-icon>导出PDF
             </el-button>
@@ -261,7 +264,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Download, View, Edit, FullScreen, Plus, Minus } from '@element-plus/icons-vue'
+import { Download, View, Edit, FullScreen, Plus, Minus, Document } from '@element-plus/icons-vue'
 import { useResumeStore } from '@/stores/resume'
 import CreativeTemplate from './templates/CreativeTemplate.vue'
 import ModernTemplate from './templates/ModernTemplate.vue'
@@ -269,6 +272,7 @@ import MinimalTemplate from './templates/MinimalTemplate.vue'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import { aiService, type JDAnalysisResult } from '@/services/aiService'
+import { WordExportService } from '@/services/wordExport'
 import type { ResumeData } from '@/stores/resume'
 
 const resumeStore = useResumeStore()
@@ -711,6 +715,26 @@ const exportPDF = async () => {
     // 确保无论成功或失败都恢复原始状态
     zoomLevel.value = originalZoom
     isEditMode.value = originalEditMode
+  }
+}
+
+// 导出Word
+const exportWord = async () => {
+  if (isEditMode.value) {
+    ElMessage.warning('请先完成编辑再导出')
+    return
+  }
+
+  try {
+    ElMessage.info('正在生成Word文档...')
+    await WordExportService.generateResumeWord(
+      editableResumeData.value,
+      selectedTemplate.value
+    )
+    ElMessage.success('Word导出成功')
+  } catch (error) {
+    console.error('Word导出错误:', error)
+    ElMessage.error('Word导出失败')
   }
 }
 </script>

@@ -14,7 +14,9 @@
     "@element-plus/icons-vue": "^2.3.2",
     "@tailwindcss/postcss": "^4.2.1",
     "autoprefixer": "^10.4.27",
+    "docx": "^9.6.1",
     "element-plus": "^2.13.5",
+    "file-saver": "^2.0.5",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.0",
     "pinia": "^3.0.4",
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^24.11.0",
     "@vitejs/plugin-vue": "^6.0.4",
     "@vue/tsconfig": "^0.8.1",
