@@ -223,6 +223,11 @@ export const useResumeStore = defineStore('resume', () => {
     jdAnalysis.value = analysis
   }
 
+  // 更新整个简历数据
+  const updateResumeData = (data: ResumeData) => {
+    resumeData.value = JSON.parse(JSON.stringify(data))
+  }
+
   // 设置匹配度分数
   const setMatchScore = (score: number) => {
     matchScore.value = score
@@ -300,6 +305,7 @@ export const useResumeStore = defineStore('resume', () => {
     updateSelfEvaluation,
     setJDAnalysis,
     setMatchScore,
+    updateResumeData,
     clearData,
     saveToLocalStorage,
     loadFromLocalStorage

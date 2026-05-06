@@ -115,7 +115,7 @@
             <template #header>
               <div class="card-header">
                 <span>{{ edu.school || '未填写学校' }}</span>
-                <el-button type="danger" size="small" @click="resumeStore.removeEducation(edu.id)">删除</el-button>
+                <el-button class="delete-btn" size="small" @click="resumeStore.removeEducation(edu.id)">删除</el-button>
               </div>
             </template>
             <el-form label-width="80px">
@@ -158,8 +158,8 @@
             </el-form>
           </el-card>
         </div>
-        <el-button type="primary" @click="addEducation">
-          <el-icon><Plus /></el-icon>添加教育经历
+        <el-button class="dark-btn" @click="addEducation">
+          添加教育经历
         </el-button>
       </el-tab-pane>
 
@@ -171,8 +171,8 @@
               <div class="card-header">
                 <span>{{ project.name || '未填写项目' }}</span>
                 <div>
-                  <el-button type="primary" size="small" @click="optimizeProject(project)">AI优化</el-button>
-                  <el-button type="danger" size="small" @click="resumeStore.removeProject(project.id)">删除</el-button>
+                  <el-button class="gray-btn-small" size="small" @click="optimizeProject(project)">AI优化</el-button>
+                  <el-button class="delete-btn" size="small" @click="resumeStore.removeProject(project.id)">删除</el-button>
                 </div>
               </div>
             </template>
@@ -192,8 +192,8 @@
             </el-form>
           </el-card>
         </div>
-        <el-button type="primary" @click="addProject">
-          <el-icon><Plus /></el-icon>添加项目经历
+        <el-button class="dark-btn" @click="addProject">
+          添加项目经历
         </el-button>
       </el-tab-pane>
 
@@ -205,8 +205,8 @@
               <div class="card-header">
                 <span>{{ work.company || '未填写公司' }}</span>
                 <div>
-                  <el-button type="primary" size="small" @click="optimizeWork(work)">AI优化</el-button>
-                  <el-button type="danger" size="small" @click="resumeStore.removeWorkExperience(work.id)">删除</el-button>
+                  <el-button class="gray-btn-small" size="small" @click="optimizeWork(work)">AI优化</el-button>
+                  <el-button class="delete-btn" size="small" @click="resumeStore.removeWorkExperience(work.id)">删除</el-button>
                 </div>
               </div>
             </template>
@@ -241,8 +241,8 @@
             </el-form>
           </el-card>
         </div>
-        <el-button type="primary" @click="addWorkExperience">
-          <el-icon><Plus /></el-icon>添加工作经历
+        <el-button class="dark-btn" @click="addWorkExperience">
+          添加工作经历
         </el-button>
       </el-tab-pane>
 
@@ -275,8 +275,8 @@
             <el-input v-model="resumeStore.resumeData.selfEvaluation" type="textarea" :rows="6" placeholder="描述个人优势、职业素养..." />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" :disabled="!resumeStore.jdAnalysis" @click="generateSelfEvaluation">
-              <el-icon><MagicStick /></el-icon>AI生成自我评价
+            <el-button class="dark-btn" :disabled="!resumeStore.jdAnalysis" @click="generateSelfEvaluation">
+              AI生成自我评价
             </el-button>
           </el-form-item>
         </el-form>
@@ -298,8 +298,8 @@
         </ul>
       </div>
       <template #footer>
-        <el-button @click="optimizeDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="applyOptimization">应用优化</el-button>
+        <el-button class="gray-btn" @click="optimizeDialogVisible = false">取消</el-button>
+        <el-button class="dark-btn" @click="applyOptimization">应用优化</el-button>
       </template>
     </el-dialog>
   </div>
@@ -308,7 +308,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus, MagicStick, Loading } from '@element-plus/icons-vue'
 import { useResumeStore, type Education, type WorkExperience, type Project } from '@/stores/resume'
 import { aiService } from '@/services/aiService'
 import { regionData, getCityLevelData, getCityDisplayName } from '@/data/regionData'
@@ -612,7 +611,76 @@ const generateSelfEvaluation = async () => {
   gap: 10px;
   padding: 40px;
   font-size: 16px;
-  color: #666;
+  color: #1a1a1a;
+}
+
+/* 黑灰色系按钮样式 */
+.dark-btn {
+  background-color: #333333;
+  border-color: #333333;
+  color: #ffffff;
+}
+
+.dark-btn:hover {
+  background-color: #1a1a1a;
+  border-color: #1a1a1a;
+  color: #ffffff;
+}
+
+.dark-btn:disabled {
+  background-color: #999999;
+  border-color: #999999;
+  color: #ffffff;
+}
+
+.gray-btn {
+  background-color: #f5f5f5;
+  border-color: #d0d0d0;
+  color: #4a4a4a;
+}
+
+.gray-btn:hover {
+  background-color: #e8e8e8;
+  border-color: #b0b0b0;
+  color: #1a1a1a;
+}
+
+.gray-btn-small {
+  background-color: #f5f5f5;
+  border-color: #d0d0d0;
+  color: #4a4a4a;
+}
+
+.gray-btn-small:hover {
+  background-color: #e8e8e8;
+  border-color: #b0b0b0;
+  color: #1a1a1a;
+}
+
+.delete-btn {
+  background-color: #666666;
+  border-color: #666666;
+  color: #ffffff;
+}
+
+.delete-btn:hover {
+  background-color: #4a4a4a;
+  border-color: #4a4a4a;
+  color: #ffffff;
+}
+
+/* 标签页选中样式 - 深色系 */
+.resume-editor :deep(.el-tabs__item.is-active) {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.resume-editor :deep(.el-tabs__active-bar) {
+  background-color: #333333;
+}
+
+.resume-editor :deep(.el-tabs__item:hover) {
+  color: #333333;
 }
 
 /* 照片上传样式 */
